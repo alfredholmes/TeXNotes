@@ -1,0 +1,13 @@
+
+\RequirePackage{import}
+\subimport{../template}{preamble.tex}
+
+
+\begin{document}
+    This is a note in which we define an equation
+    \begin{equation} \label{equation:yang mills functional}
+        YM(A) = \int \|F_A\|^2
+    \end{equation}
+    We can reference this as usual with \eqref{equation:yang mills functional} or \cref{equation:yang mills functional}. We can also reference other notes using the command \texttt{\\excref}. For example \excref{ExampleNote}{equation:chern simons functional}.
+    %\printbibliography
+\end{document}

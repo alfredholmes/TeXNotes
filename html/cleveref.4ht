@@ -1,0 +1,91 @@
+% cleveref.4ht (2023-03-10-17:14), generated from tex4ht-4ht.tex
+% Copyright 2018-2023 TeX Users Group
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either
+% version 1.3c of this license or (at your option) any
+% later version. The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions
+% of LaTeX version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status "maintained".
+%
+% The Current Maintainer of this work
+% is the TeX4ht Project <http://tug.org/tex4ht>.
+%
+% If you modify this program, changing the
+% version identification would be appreciated.
+\immediate\write-1{version 2023-03-10-17:14}
+
+
+
+% orig:refstepcounter is saved in cleveref-hooks.4ht
+\let\cref@old@refstepcounter\orig:refstepcounter%
+\def\refstepcounter{%
+  \@ifnextchar[{\refstepcounter@optarg}{\refstepcounter@noarg}%]
+}%
+
+% fix for TeX4ht label mechanism
+\def\cref:currentlabel#1{\let\cnt:currentlabel\@currentlabel
+\def\:@currentlabel{\ifx \cnt:currentlabel\@currentlabel
+   \expandafter\the\csname c@#1\endcsname\else \@currentlabel\fi}%
+%
+  \anc:lbl r{#1}%
+}
+
+\def\refstepcounter@noarg#1{%
+  \cref@old@refstepcounter{#1}%
+  \cref@constructprefix{#1}{\cref@result}%
+  \@ifundefined{cref@#1@alias}%
+    {\def\@tempa{#1}}%
+    {\def\@tempa{\csname cref@#1@alias\endcsname}}%
+  \protected@xdef\cref@currentlabel{%
+    [\@tempa][\arabic{#1}][\cref@result]%
+    \csname p@#1\endcsname\csname the#1\endcsname}%
+    \cref:currentlabel{#1}%
+    }%
+\def\refstepcounter@optarg[#1]#2{%
+  \cref@old@refstepcounter{#2}%
+  \cref@constructprefix{#2}{\cref@result}%
+  \@ifundefined{cref@#1@alias}%
+    {\def\@tempa{#1}}%
+    {\def\@tempa{\csname cref@#1@alias\endcsname}}%
+  \protected@xdef\cref@currentlabel{%
+    [\@tempa][\arabic{#2}][\cref@result]%
+    \csname p@#2\endcsname\csname the#2\endcsname}%
+    \cref:currentlabel{#2}%
+  }%
+
+\ifdefined\@firstoffive\else%
+  \def\@firstoffive#1#2#3#4#5{#1}%
+\fi
+\def\:tempa#1#2{\bgroup%
+  \def\rEfLiNK##1##2{\Link{##1}{}}%
+  \def\XRrEfLiNK[##1]##2##3{\Link[##1]{##2}{}}% handle links from Xr and Xr-hyper
+  \expandafter\expandafter\expandafter\@firstoffive\csname r@#2\endcsname{}{}{}{}{}%
+  \cref@getlabel{#2}{\@templabel}%
+  #1{\@templabel}{}{}%
+  \EndLink\egroup%
+}%
+
+\HLet\@@@setcref=\:tempa
+
+\@ifpackageloaded{amsthm}{
+  \let\cref@thmnoarg\@thm%
+  \def\@thm{\@ifnextchar[{\cref@thmoptarg}{\cref@thmnoarg}}%]
+  \def\:tempb[#1]#2#3#4{%
+   % call original amsthm theorem definition, but
+   % disable \:thm in order to prevent infinite loop
+   \let\:thm\:gobble%
+   \cref@thmnoarg{#2}%
+   \o:cref@thmoptarg:[#1]{#2}{#3}{#4}
+  }%
+  \HLet\cref@thmoptarg\:tempb%
+}{}%
+
+
+\Hinput{cleveref}
+
+\endinput
+

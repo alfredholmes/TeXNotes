@@ -1,0 +1,74 @@
+% xr-hyper.4ht (2023-03-10-16:43), generated from tex4ht-4ht.tex
+% Copyright 2003-2009 Eitan M. Gurari
+% Copyright 2009-2023 TeX Users Group
+%
+% This work may be distributed and/or modified under the
+% conditions of the LaTeX Project Public License, either
+% version 1.3c of this license or (at your option) any
+% later version. The latest version of this license is in
+%   http://www.latex-project.org/lppl.txt
+% and version 1.3c or later is part of all distributions
+% of LaTeX version 2005/12/01 or later.
+%
+% This work has the LPPL maintenance status "maintained".
+%
+% The Current Maintainer of this work
+% is the TeX4ht Project <http://tug.org/tex4ht>.
+%
+% If you modify this program, changing the
+% version identification would be appreciated.
+\immediate\write-1{version 2023-03-10-16:43}
+
+   \let\XR:loop=\XR@loop
+\def\XR@loop#1{%
+   \def\:temp##1.aux{\openin15=##1.xref
+\ifeof15
+   \:warning{missing ##1.xref for ##1.aux}%
+   \let\:temp\empty
+\else
+   \def\:temp{\input ##1.xref}%
+\fi
+\closein15  \:temp
+}%
+   \catcode`\:=11
+     \expandafter\ifx \csname xr:CrossWord\endcsname\relax
+  \let\xr:CrossWord=\Cross:Word
+  \def\Cross:Word##1##2{%
+     \expandafter\let\csname  cw:\cw:format{##1##2}\endcsname\:UnDef
+     \xr:CrossWord{##1}{##2}}%
+\fi
+%
+     \:temp#1%
+   \catcode`\:=12
+   \XR:loop{#1}%
+}
+\ExplSyntaxOn
+\long\def\XR@test#1#2#3#4\XR@{%
+  \ifx#1\newlabel
+     \regex_match:nnTF{@cref}{#2}% we must handle cleveref meta references
+{\expandafter\xdef\csname r@\XR@prefix#2\endcsname{#3}}%
+{\expandafter\xdef\csname r@\XR@prefix#2\endcsname{\XR:rEfLiNK #3}}%
+%
+  \else\ifx#1\@input
+     \edef\XR@list{\XR@list#2\relax}%
+  \fi\fi
+  \ifeof\@inputcheck\expandafter\XR@aux
+  \else\expandafter\XR@read\fi}
+\ExplSyntaxOff
+
+   \def\XRrEfLiNK[#1]#2#3{%
+  \filename@parse{#1}% Get basename of the linked html file,
+  % xr:dir\filename@base contains file's directory
+  \a:xr[\csname xr:dir:\filename@base\endcsname#1]{#2}{}%
+  % this extra \fi fixes warning about unclosed \ifx, I hope it doesn't break anything
+  % I cannot find where that \ifx starts
+  \ifx\hyperrefLabel\:UnDef #3\else \hyperrefLabel\fi \b:xr\fi}
+\NewConfigure{xr}{2}
+\Configure{xr}{\Link}{\EndLink}
+\def\XR:rEfLiNK#1#2#3#4#5{{\xr:rEfLiNK#1}{\xr:rEfLiNK#2}{\xr:rEfLiNK#3}}
+\def\xr:rEfLiNK#1#2{\noexpand\XRrEfLiNK[\Get:HFile#2-]{#2}}
+\def\Get:HFile#1-#2-{\:LikeRef{)F\:gobble #1F-}}
+
+\Hinput{xr}
+\endinput
+

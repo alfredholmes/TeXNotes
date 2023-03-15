@@ -1,0 +1,49 @@
+\documentclass{article} 
+
+\usepackage{amsmath}
+\usepackage{mathrsfs}
+
+\usepackage{xr-hyper} 
+
+%hyperlinks and referencing
+\usepackage{hyperref} 
+\usepackage[capitalize,nameinlink,noabbrev]{cleveref}
+
+
+%setup external file links
+\subimport{../}{documents.tex}
+\usepackage{slashed}
+
+
+
+\usepackage[style=alphabetic]{biblatex}
+\addbibresource{../bibliography.bib}
+
+
+\hypersetup{
+    colorlinks = true,
+    citecolor = cyan
+}
+
+\usepackage{amsthm}
+\usepackage{amssymb}
+
+\theoremstyle{definition}
+
+\newtheorem{definition}{Definition}[]
+
+\newtheorem{example}[definition]{Example}
+\newtheorem{prop}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{thm}[definition]{Theorem}
+\newtheorem{cor}[definition]{Corollary}
+\newtheorem{rmk}[definition]{Remark}
+\newtheorem{conj}[definition]{Conjecture}
+
+
+\newcommand{\excref}[2]{
+    \hyperref[#1-#2]{\texttt{#1/}\cref{#1-#2}}
+}
+
+
+
