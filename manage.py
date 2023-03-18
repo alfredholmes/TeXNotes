@@ -1,7 +1,7 @@
 #!/bin/python3
 import sys
 
-
+import shutil
 
 
 class Helper:
@@ -15,6 +15,22 @@ class Helper:
 
         """)
 
+    def newnote(note_name, reference_name=None):
+        """
+            createnote note_name [Optional ReferenceName]
+            Creates note with name note_name.tex, Second argument is optional and is the name in the reference, defaults to NoteName
+
+        """
+
+        if reference_name is None:
+            reference_name = ''.join([w.capitalize() for w in note_name.split('_')])
+
+    
+        shutil.copyfile('template/note.tex', f'notes/{note_name}.tex')
+
+        with open('documents.tex', 'a') as f:
+            f.write(f'\externaldocument{{{ReferenceName}}}{{{note_name}}}\n')
+
 
 
 
@@ -27,9 +43,11 @@ def main(args):
         return
 
     try: 
-        function = getattr(Helper)
+        function = getattr(Helper, func)
     except AttributeError:
         print(f"Unregognised command {args[1]}, try 'help' for a list of availlable commands")
+
+    function(*args[2:])
 
 
 

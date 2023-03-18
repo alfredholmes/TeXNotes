@@ -8,7 +8,7 @@ This is primarily intended for academics who write papers in LaTeX and want to w
 
 ### How to use
 
-    There are three main folders. `/notes`, `/template` and `/pdf`. This assumess that you want to render your notes as `pdf` documents rather than as `html` (`html` rendering also works, replacing `pdflatex` with `make4ht` but there are sometimes some issues with `hyperref` and `xr-hyper`). Inside `/notes` is where the `.tex` documents get stored. The example notes import the file `/template/preamble` which contains various package imports. The most important part of `/template/preamble.tex` is the importing of the file `/documents.tex` which contains all the `\externaldocument` declarations that will allow `\cref` to reference equations in other documents. Note that the second parameter in the `\externaldocument` command is the name of the file that you want to reference. This is actually refers to the `document_name.aux`, which contains all the referencing information, rather than the `.tex` file. Hence this file name parameter should match the directory structure of the output `pdf`s, not the directory structure of your `.tex` documents. To allow all the notes to use the same `/documents.tex` it is most straightforward to render the `pdf`s from inside the `/pdf` directory. So to render the example notes simply run
+There are three main folders. `/notes`, `/template` and `/pdf`. This assumess that you want to render your notes as `pdf` documents rather than as `html` (`html` rendering also works, replacing `pdflatex` with `make4ht` but there are sometimes some issues with `hyperref` and `xr-hyper`). Inside `/notes` is where the `.tex` documents get stored. The example notes import the file `/template/preamble` which contains various package imports. The most important part of `/template/preamble.tex` is the importing of the file `/documents.tex` which contains all the `\externaldocument` declarations that will allow `\cref` to reference equations in other documents. Note that the second parameter in the `\externaldocument` command is the name of the file that you want to reference. This is actually refers to the `document_name.aux`, which contains all the referencing information, rather than the `.tex` file. Hence this file name parameter should match the directory structure of the output `pdf`s, not the directory structure of your `.tex` documents. To allow all the notes to use the same `/documents.tex` it is most straightforward to render the `pdf`s from inside the `/pdf` directory. So to render the example notes simply run
     ```
     $ cd pdf
     $ pdflatex ../notes/example_note.tex
@@ -37,14 +37,18 @@ This just wraps the `\cref{NewNote-reference label}` in a hyperlink containing t
 
 The `manage.py` python script contains shortcuts for many frequently executed actions. These include
 
-`$ ./manage.py createnote note_name [optional cref name, defaults to NoteName = name.split('-') then capitalized and concatenated]`.
+`$ ./manage.py newnote note_name [optional cref name, defaults to NoteName = name.split('-') then capitalized and concatenated]`.
 
 This executes the procedure described in [Adding New Notes].
 
-`$./manage.py pdf_changed$`
+`$./manage.py renderchanged$`
 
 Run `pdflatex` on all notes that have been updated, and then on files which link to these updated files.
 
 `$./manage.py pdf_live [seconds between updates]$`.
 
 Continuously apply `pdf_changed`, checking for updates every second.
+
+`$./manage.py index`
+
+Looks throught the files listed in the `documents.tex` file and adds them to the local database `documents.db`. This keeps track of any rendering done.
