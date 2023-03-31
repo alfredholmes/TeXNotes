@@ -30,7 +30,7 @@ class Helper:
         shutil.copyfile('template/note.tex', f'notes/{note_name}.tex')
 
         with open('documents.tex', 'a') as f:
-            f.write(f'\externaldocument{{{reference_name}}-}{{{note_name}}}\n')
+            f.write(f'\externaldocument[{reference_name}-]{{{note_name}}}\n')
 
 
     def renderallhtml():

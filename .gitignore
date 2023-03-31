@@ -1,5 +1,9 @@
 notes/*
+html/*
+pdf/*
+renders/*
 files.db
+documents.tex
 
 ## Core latex/pdflatex auxiliary files:
 *.aux
