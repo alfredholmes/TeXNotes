@@ -2,7 +2,8 @@
 import sys
 
 import shutil
-
+from LatexZettle import files
+import os
 
 class Helper:
 
@@ -29,9 +30,29 @@ class Helper:
         shutil.copyfile('template/note.tex', f'notes/{note_name}.tex')
 
         with open('documents.tex', 'a') as f:
-            f.write(f'\externaldocument{{{ReferenceName}}}{{{note_name}}}\n')
+            f.write(f'\externaldocument{{{reference_name}}-}{{{note_name}}}\n')
 
 
+    def renderallhtml():
+        """
+            Renderes all the notes using make4ht. Saves output in /html
+        """
+
+        notes = [str(f) for f in files.get_files('notes')]
+        os.chdir('html')
+
+        for note in notes:
+            filename = 'notes/'.join(note.split('notes/')[1:])
+            filename = filename[:-4] 
+            os.system(f'make4ht ../{note} svg')
+            os.system(f'biber {filename}')
+
+        for note in notes:
+            filename = 'notes/'.join(note.split('notes/')[1:])
+            filename = filename[:-4] 
+            os.system(f'make4ht ../{note} svg')
+       
+       
 
 
 

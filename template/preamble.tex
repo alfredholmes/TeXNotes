@@ -40,10 +40,14 @@
 \newtheorem{rmk}[definition]{Remark}
 \newtheorem{conj}[definition]{Conjecture}
 
+\usepackage{ifthen}
 
-\newcommand{\excref}[2]{
-    \hyperref[#1-#2]{\texttt{#1/}\cref{#1-#2}}
-}
+%if just linking to the note then don't use cref
+\newcommand{\excref}[2]
+    {\ifthenelse{\equal{#2}{note}}
+    {\hyperref[#1-#2]{\texttt{#1}}}
+    {\hyperref[#1-#2]{\texttt{#1/}\cref{#1-#2}}}}
+\newcommand{\exhyperref}[3]{\hyperref[#1-#2]{#3}}
 
 
 
