@@ -53,6 +53,25 @@ class Helper:
             os.system(f'make4ht ../{note} svg')
        
        
+    def renderallpdf():
+        """
+            Renderes all the notes using pdflatex. Saves output in /pdf
+        """
+        
+        notes = [str(f) for f in files.get_files('notes')]
+        os.chdir('pdf')
+
+        for note in notes:
+            filename = 'notes/'.join(note.split('notes/')[1:])
+            filename = filename[:-4] 
+            os.system(f'pdflatex ../{note} svg')
+            os.system(f'biber {filename}')
+
+        for note in notes:
+            filename = 'notes/'.join(note.split('notes/')[1:])
+            filename = filename[:-4] 
+            os.system(f'pdflatex ../{note} svg')
+
 
 
 
