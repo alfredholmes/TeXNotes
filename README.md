@@ -1,4 +1,4 @@
-# LaTeX-Zettle
+# LaTeX-Zettel
 Zettelkasten or Slip box with notes written in LaTeX
 
 ### Why Do This?
@@ -8,15 +8,12 @@ This is primarily intended for academics who write papers in LaTeX and want to w
 
 ### How to use
 
-There are three main folders. `/notes`, `/template` and `/pdf`. This assumess that you want to render your notes as `pdf` documents rather than as `html` (`html` rendering also works, replacing `pdflatex` with `make4ht` but there are sometimes some issues with `hyperref` and `xr-hyper`). Inside `/notes` is where the `.tex` documents get stored. The example notes import the file `/template/preamble` which contains various package imports. The most important part of `/template/preamble.tex` is the importing of the file `/documents.tex` which contains all the `\externaldocument` declarations that will allow `\cref` to reference equations in other documents. Note that the second parameter in the `\externaldocument` command is the name of the file that you want to reference. This is actually refers to the `document_name.aux`, which contains all the referencing information, rather than the `.tex` file. Hence this file name parameter should match the directory structure of the output `pdf`s, not the directory structure of your `.tex` documents. To allow all the notes to use the same `/documents.tex` it is most straightforward to render the `pdf`s from inside the `/pdf` directory. So to render the example notes simply run
-    ```
-    $ cd pdf
-    $ pdflatex ../notes/example_note.tex
-    $ pdflatex ../notes/referencing_example.tex
-    $ pdflatex ../notes/example_note.tex
-    $ pdflatex ../notes/referencing_example.tex
-    
-    ```
+There are three main folders. `/notes`, `/template` and `/pdf`. This assumess that you want to render your notes as `pdf` documents rather than as `html` (`html` rendering also works, replacing `pdflatex` with `make4ht` but there are sometimes some issues with `hyperref` and `xr-hyper` which can be fixed by adding the flag `-c ../config/make4ht.cfg`). Inside `/notes` is where the `.tex` documents get stored. The example notes import the file `/template/preamble` which contains various package imports. The most important part of `/template/preamble.tex` is the importing of the file `/notes/documents.tex` which contains all the `\externaldocument` declarations that will allow `\cref` to reference equations in other documents. Note that the second parameter in the `\externaldocument` command is the name of the file that you want to reference. This is actually refers to the `document_name.aux`, which contains all the referencing information, rather than the `.tex` file. Hence this file name parameter should match the directory structure of the output `pdf`s, not the directory structure of your `.tex` documents. To allow all the notes to use the same `/documents.tex` it is most straightforward to render the `pdf`s from inside the `/pdf` directory. So to render notes using `pdflatex` run
+```
+$ cd pdf
+$ pdflatex ../notes/path_to_note.tex 
+```
+If note `A` references note `B`, then you'll have to render `B` before `A`.
     
 Now you will have two pdfs (and a load of LaTeX build files) which give a basic example of the setup.
 
@@ -28,10 +25,14 @@ To add a new note simply copy the note template into the notes folder and rename
 ```
 and that's it. Any labels from the note will be able to be referenced from other notes using the command
 ```
-\excref{NewNote}{reference label}
+\excref[reference label]{NewNote}
 ```
-This just wraps the `\cref{NewNote-reference label}` in a hyperlink containing the name of the note.
+This will use `cref` to generate the label and insert the string `\texttt{NewNote/}` before. Using just `\cref{NewNote-reference label}` will render the reference to the label without the document name. To add custom text to the external reference there is the command
 
+```
+\exhyperref[reference label]{NewNote}{hyperlink text}
+```
+which will create a hyperlink to the item labelled `reference label` in `new_note.tex` with the text `hyperlink text`. If the optional parameter is ommited then `\exhyperref` and `\excref` will reference the label `note` which in the default template is inserted just after the title.
 
 ### `manage.py` helper scripts
 
@@ -39,16 +40,17 @@ The `manage.py` python script contains shortcuts for many frequently executed ac
 
 `$ ./manage.py newnote note_name [optional cref name, defaults to NoteName = name.split('-') then capitalized and concatenated]`.
 
-This executes the procedure described in [Adding New Notes].
+There is also, at the moment 
 
-`$./manage.py renderchanged$`
+`$ ./manage.py renderallpdf `
 
-Run `pdflatex` on all notes that have been updated, and then on files which link to these updated files.
+and
 
-`$./manage.py pdf_live [seconds between updates]$`.
+`$ ./manage.py renderallhtml`
 
-Continuously apply `pdf_changed`, checking for updates every second.
+although these may be removed to incourage the use of `latexmk` and similar systems and make the project easier to maintain cross platform support.
 
-`$./manage.py index`
 
-Looks throught the files listed in the `documents.tex` file and adds them to the local database `documents.db`. This keeps track of any rendering done.
+
+
+
