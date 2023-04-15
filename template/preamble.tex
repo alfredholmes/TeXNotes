@@ -1,10 +1,13 @@
 \documentclass{article} 
 
-\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
 \usepackage{mathrsfs}
+\usepackage{tikz-cd}
+
+\usepackage{amsmath}
 
 \usepackage{xr-hyper} 
-
 %hyperlinks and referencing
 \usepackage{hyperref} 
 \usepackage[capitalize,nameinlink,noabbrev]{cleveref}
@@ -25,12 +28,10 @@
     citecolor = cyan
 }
 
-\usepackage{amsthm}
-\usepackage{amssymb}
 
 \theoremstyle{definition}
 
-\newtheorem{definition}{Definition}[]
+\newtheorem{definition}{Definition}
 
 \newtheorem{example}[definition]{Example}
 \newtheorem{prop}[definition]{Proposition}
@@ -49,5 +50,7 @@
     {\hyperref[#1-#2]{\texttt{#1/}\cref{#1-#2}}}}
 \newcommand{\exhyperref}[3]{\hyperref[#1-#2]{#3}}
 
-
+\makeatletter
+\newcommand\currentdoc[1]{\edef\@currentlabel{#1}\label{#1}}
+\makeatother
 

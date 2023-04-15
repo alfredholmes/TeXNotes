@@ -1,17 +1,18 @@
 import peewee as pw
 
 
-database = pw.SqliteDatabase('files.db')
+database = pw.SqliteDatabase('slipbox.db')
 
 class BaseModel(pw.Model):
     class Meta:
         database = database
 
 class Note(BaseModel):
-    filename = pw.CharField()  #filename of the note, eg note.tex or subfolder/note.tex
-    reference = pw.CharField() #\externaldocument reference for the note, default value for example_note.tex would be ExampleNote.
-    last_build_date = pw.DateTimeField()
-    last_edit_date = pw.DateTimeField()
+    filename = pw.CharField(unique=True)  #filename of the note, eg note.tex or subfolder/note.tex
+    reference = pw.CharField(unique=True) #\externaldocument reference for the note, default value for example_note.tex would be ExampleNote.
+    last_build_date_html = pw.DateTimeField(null=True)
+    last_build_date_pdf = pw.DateTimeField(null=True)
+    last_edit_date = pw.DateTimeField(null=True)
 
 
 class Citation(BaseModel):
@@ -44,4 +45,7 @@ NoteTag = Tag.notes.get_through_model()
 def create_tables(*models):
     with database:
         database.create_tables(models)
+
+def create_all_tables():
+    create_tables(Note, Citation, Link, Label, Tag)
 
