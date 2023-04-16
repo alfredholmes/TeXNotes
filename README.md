@@ -13,26 +13,30 @@ There are three main folders. `/notes`, `/template` and `/pdf`. This assumess th
 $ cd pdf
 $ pdflatex ../notes/path_to_note.tex 
 ```
-If note `A` references note `B`, then you'll have to render `B` before `A`.
+If note `A` references note `B`, then you'll have to render `B` before `A` for the hyperlinks to work correctly.
     
 Now you will have two pdfs (and a load of LaTeX build files) which give a basic example of the setup.
 
 #### Adding New Notes 
 
-To add a new note simply copy the note template into the notes folder and rename it. Say for example  to `new_note.tex`. Now add the line 
+To add a new note simply run
+
+`$ ./manage.py newnote note_name [optional cref name, defaults to NoteName = name.split('_') then capitalized and concatenated]`.
+
+this just copies the note template into the `/notes/slipbox/` folder, saving it as `new_note.tex` and adds the line 
 ```Latex
 \externaldocument{NewNote-}{new_note}
 ```
-and that's it. Any labels from the note will be able to be referenced from other notes using the command
+to `/notes/documents.tex`. Any labels from the note will be able to be referenced from other notes using the command 
 ```
 \excref[reference label]{NewNote}
 ```
-This will use `cref` to generate the label and insert the string `\texttt{NewNote/}` before. Using just `\cref{NewNote-reference label}` will render the reference to the label without the document name. To add custom text to the external reference there is the command
+which is defined in `/template/preamble.tex`. This will use `cref` to generate the label and insert `\texttt{NewNote/}` before it. Using just `\cref{NewNote-reference label}` use the default `cref` to render the reference to the label, and so willl not include the document name. To add custom text to the external reference there is the command
 
 ```
 \exhyperref[reference label]{NewNote}{hyperlink text}
 ```
-which will create a hyperlink to the item labelled `reference label` in `new_note.tex` with the text `hyperlink text`. If the optional parameter is ommited then `\exhyperref` and `\excref` will reference the label `note` which in the default template is inserted just after the title.
+also defined in `/template/preamble.tex`. This creates a hyperlink to the item labelled `reference label` in `new_note.tex` with the text `hyperlink text`. If the optional parameter is ommited then `\exhyperref` and `\excref` will reference the label `note` which in the default template is inserted just after the title.
 
 ### `manage.py` helper scripts
 

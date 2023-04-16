@@ -2,9 +2,11 @@
 import sys
 
 import shutil
-from LatexZettle import files, database
+from LatexZettel import files, database
 import re
 import os
+import peewee as pw
+
 
 class Helper:
 
@@ -21,7 +23,7 @@ class Helper:
         """
             
 
-        with open('documents.tex', 'a') as f:
+        with open('notes/documents.tex', 'a') as f:
             f.write(f'\externaldocument[{reference}-]{{{filename}}}\n')
 
 
@@ -31,11 +33,22 @@ class Helper:
         return notes
 
     def createnotefile(filename):
-        try 
+        try:
+            os.mkdir('notes')
+        except FileExistsError:
+            pass
+
+        try:
+            os.mkdir('notes/slipbox')
+        except FileExistsError:
+            pass
+
+
+        try:
             with open(f'notes/{filename}.tex') as f:
                 pass
         except FileNotFoundError:
-            shutil.copyfile('template/note.tex', f'notes/{filename}.tex')
+            shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
             return
 
         print(f'File notes/{filename}.tex already exists, skipping copying the template')
@@ -49,17 +62,19 @@ class Helper:
             to do: check whether a file already exists etc
 
         """
-        if reference == "":
-            reference = ''.join([w.capitalize() for w in filename.split('_')])
+        if reference_name == "":
+            reference_name = ''.join([w.capitalize() for w in note_name.split('_')])
         
         #see if the note already exists
         try:
-            note = database.Note.get(filename=filename)
+            note = database.Note.get(filename=note_name)
             raise ValueError(f'A note with file name {filename} already exists in the database. If this is not the case then run manage.py synchronize to update the database, and then try again')
-            return
-        except database.DoesNotExist:
+            return 
+        except pw.OperationalError:
+            database.create_all_tables()
+        except database.Note.DoesNotExist:
             try: 
-                note = database.Note.get(reference=reference)
+                note = database.Note.get(reference=reference_name)
                 raise ValueError(f'A note with reference {reference} already exists in the database. If this is not the case then run manage.py synchronize to update the database, and then try again. If the problem persists check the documents.tex file is correctly setup')
                 return
             except database.Note.DoesNotExist:
@@ -144,7 +159,7 @@ class Helper:
                     filename = m.group(4)
 
                     if filename not in notes:
-                       print(f'File {filename} with reference {reference_name} missing from notes. Make new note now? (y/n)')
+                        print(f'File {filename} with reference {reference_name} missing from notes. Make new note now? (y/n)')
                         if Helper.getyesno():
                             Helper.createnotefile(filename)
                             tracked_notes[filename] = reference_name
