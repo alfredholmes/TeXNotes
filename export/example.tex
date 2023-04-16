@@ -1,0 +1,64 @@
+
+\documentclass{article} 
+
+\usepackage{amsmath}
+\usepackage{amsthm}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{slashed}
+
+
+\usepackage{hyperref} 
+\usepackage[capitalize,nameinlink,noabbrev]{cleveref}
+
+
+\usepackage{slashed}
+
+
+
+\usepackage[style=alphabetic]{biblatex}
+\addbibresource{../bibliography.bib}
+
+
+\hypersetup{
+    colorlinks = true,
+    citecolor = cyan
+}
+
+
+\theoremstyle{definition}
+
+\newtheorem{definition}{Definition}[section]
+
+\newtheorem{example}[definition]{Example}
+\newtheorem{prop}[definition]{Proposition}
+\newtheorem{lemma}[definition]{Lemma}
+\newtheorem{thm}[definition]{Theorem}
+\newtheorem{cor}[definition]{Corollary}
+\newtheorem{rmk}[definition]{Remark}
+\newtheorem{conj}[definition]{Conjecture}
+
+
+\newcommand{\excref}[2][note]{\cref{#1}}
+\newcommand{\exhyperref}[3][note]{\hyperref[#1]{#3}}
+
+
+
+
+\title{A Fibrewise ADHM Correspondence}
+\usepackage{catchfilebetweentags}
+
+\begin{document}
+    \maketitle
+
+    \section{Example Export}
+
+    \ExecuteMetaData[../notes/slipbox/note_name.tex]{note}
+
+
+
+     
+
+    \printbibliography
+
+\end{document}
