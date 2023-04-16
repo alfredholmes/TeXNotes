@@ -55,6 +55,6 @@ and
 although these may be removed to incourage the use of `latexmk` and similar systems and make the project easier to maintain cross platform support.
 
 
-
+[![Youtube video image](https://img.youtube.com/vi/QVKBUWBt0Fc/0.jpg)](https://www.youtube.com/watch?v=QVKBUWBt0Fc)
 
 
