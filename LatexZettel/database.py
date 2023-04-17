@@ -23,21 +23,21 @@ class Citation(BaseModel):
     citationkey = pw.CharField()
 
 
+class Label(BaseModel):
+    note = pw.ForeignKeyField(Note, on_delete='CASCADE', backref='labels')
+    label = pw.CharField()
+
 
 class Link(BaseModel):
     """
         Model to keep track of links between files
     """
     source = pw.ForeignKeyField(Note, on_delete='CASCADE', backref='references') #note containing the reference
-    target = pw.ForeignKeyField(Note, on_delete='CASCADE', backref='referenced_by') #note being referenced
-    target_label = pw.CharField() #\excref{target}{target_label}
+    target = pw.ForeignKeyField(Label, on_delete='CASCADE', backref='referenced_by') #\excref{target}{target_label}
 
-class Label(BaseModel):
-    note = pw.ForeignKeyField(Note, on_delete='CASCADE', backref='labels')
-    label = pw.CharField()
 
 class Tag(BaseModel):
-    name = pw.CharField()
+    name = pw.CharField(unique=True)
     notes = pw.ManyToManyField(Note)
 
 NoteTag = Tag.notes.get_through_model()

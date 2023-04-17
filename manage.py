@@ -28,7 +28,7 @@ class Helper:
 
 
 
-    def getnotefiles(directory='notes'):
+    def getnotefiles(directory='notes/slipbox'):
         notes = [str(f) for f in files.get_files(directory)]
         return notes
 
@@ -124,7 +124,7 @@ class Helper:
         os.chdir('pdf')
 
         for note in notes:
-            filename = note[:-4] 
+            filename = ''.join(note[:-4].split('notes/slipbox')[1:])
             os.system(f'pdflatex ../{note} svg')
             os.system(f'biber {filename}')
 
@@ -148,15 +148,17 @@ class Helper:
             Reads the file documents.tex and adds these files to the database, then checks for files in /notes that aren't in the documents
         """
 
-        notes = ['notes/'.join(str(f).split('notes/')[1:])[:-4] for f in files.get_files('notes')]
+        notes = Helper.getnotefiles()
+        notes = [''.join(note.split('notes/slipbox/')[1:])[:-4] for note in notes]
         #get all the tracked notes
         tracked_notes = {}
-        with open('documents.tex', 'r') as f:
+        with open('notes/documents.tex', 'r') as f:
             for line in f:
                 m = re.search('(\\\\externaldocument\[)(.+?)(\-\]\{)(.+?)(\})', line)
                 if m:
                     reference_name = m.group(2)
                     filename = m.group(4)
+
 
                     if filename not in notes:
                         print(f'File {filename} with reference {reference_name} missing from notes. Make new note now? (y/n)')
@@ -178,6 +180,7 @@ class Helper:
                 except database.Note.DoesNotExist:
                     #create the note if there are no close matches
                     note = database.Note(filename=filename, reference=reference_name)
+                    note.save()
 
 
 
@@ -189,34 +192,60 @@ class Helper:
                     print(f'Reference (defaults to {reference}):', end='')
                     reference = input()
                     Helper.addtodocuments(note, reference)
+        
+        #add labels
+        for note in database.Note:
+            labels = Helper.getlabels(note)
+            tracked_labels = [label.label for label in note.labels]
+            for label in labels:
+                if label not in tracked_labels:
+                    database.Label.create(label=label, note=note)
+                    print(f'created label {label}')
+                   
+        #add connections
 
-
-
-
-
-    def getlabels():
-        notes = Helper.getnotefiles()
-        for note in notes:
-            with open(f'{note}') as f:
-                for line in f:
-                    labels = re.search('(\\\\label\{)(.*?)(\})', line)
+        for note in database.Note: 
+            links = Helper.getlinks(note)
+            tracked = [(link.target.note.reference, link.target.label) for link in note.references] 
+            for link in links:
+                if link not in tracked:
                     try:
-                        label = labels.group(2)
-                        print(label)
-                    except AttributeError:
-                        pass
+                        label = database.Label.get(note__reference=link[0], label=link[1])
+                        link = database.Link.create(target=label, source=note)
+                        print(f'created link, {note.filename}, {label.note.filename}, {label}')
+                    except database.Label.DoesNotExist:
+                        print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
+
+
+            
 
 
 
-    def getlinks():
+    def getlabels(note):
+        file_labels = []
+        with open(f'notes/slipbox/{note.filename}.tex') as f:
+            for line in f:
+                labels = re.search('(\\\\(label|currentdoc)\{)(.*?)(\})', line)
+                try:
+                    label = labels.group(3)
+                    file_labels.append(label)
+                except AttributeError:
+                    pass
+
+        return file_labels
+
+
+
+
+    def getlinks(note):
         notes = Helper.getnotefiles()
-        for note in notes:
-            with open(note) as f:
-                for line in f:
-                    links = re.finditer('\\\\ex(hyper)?(c)?ref\{(.*?)\}\{(.*?)\}', line)
-
-                    for link in links:
-                        print(f'file: {link.group(3)}, label referenced {link.group(4)}')
+        file_references = []
+        with open(f'notes/slipbox/{note.filename}.tex') as f:
+            for line in f:
+                links = re.finditer('\\\\ex(hyper)?(c)?ref\[(.*?)\]\{(.*?)\}', line)
+                for link in links:
+                    file_references.append((link.group(4), link.group(3))) 
+        return file_references
 
     def gettags():
         notes = Helper.getnotefiles()
@@ -228,7 +257,6 @@ class Helper:
                 if re.search("\\\\end\{document\}", last_line) is None:
                     note_tags = [f.lower() for f in last_line.strip().split(",")]
                     for tag in note_tags:
-                        print(note)
                         tags[tag] = ('notes/'.join(note.split('notes/')[1:]))[:-4]
 
 
