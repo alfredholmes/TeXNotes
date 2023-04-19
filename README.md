@@ -1,5 +1,5 @@
-# LaTeX-Zettel
-Zettelkasten or Slip box with notes written in LaTeX
+# LaTeX-Zettel - Zettelkasten for mathematics.
+Zettelkasten or Slip box with notes written in LaTeX. 
 
 ### Why Do This?
 
