@@ -124,7 +124,7 @@ class Helper:
         os.chdir('pdf')
 
         for note in notes:
-            filename = ''.join(note[:-4].split('notes/slipbox')[1:])
+            filename = ''.join(note[:-4].split('notes/slipbox/')[1:])
             os.system(f'pdflatex ../{note} svg')
             os.system(f'biber {filename}')
 
