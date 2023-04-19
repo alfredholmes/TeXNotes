@@ -1,4 +1,4 @@
-# LaTeX-Zettel - Zettelkasten for mathematics.
+# LaTeX-Zettel - Zettelkasten for Mathematics.
 Zettelkasten or Slip box with notes written in LaTeX. 
 
 ### Why Do This?
