@@ -2,11 +2,10 @@
 import sys
 
 import shutil
-from LatexZettel import files, database
+from LatexZettel import files, database, analysis
 import re
 import os
 import peewee as pw
-
 
 class Helper:
 
@@ -264,7 +263,17 @@ class Helper:
 
 
                         
+    def listunreferenced():
+        import numpy as np
+        notes, adj_matrix = analysis.calculate_adjacency_matrix()
 
+        referenced_by = np.sum(adj_matrix, axis=0)
+        
+        number = 1
+        for note, links_from in zip(notes, referenced_by):
+            if links_from == 0:
+                print(f'{number}: {note.filename}')
+                number += 1
 
 
 
