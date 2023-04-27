@@ -284,7 +284,7 @@ class Helper:
         graph = nx.DiGraph(adj)
         graph = nx.relabel_nodes(graph, {i: note.filename for i, note in enumerate(notes)})
 
-        nt = Network()
+        nt = Network('1080px', '1920px', directed=True)
         nt.toggle_physics(True)
         nt.from_nx(graph)
 

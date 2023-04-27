@@ -1,1 +1,4 @@
 peewee
+numpy
+networkx
+pyvis
