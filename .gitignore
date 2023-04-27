@@ -7,6 +7,7 @@ renders/*
 *.db
 *.bib
 
+network.html
 
 __pycache__/
 *.py[cod]

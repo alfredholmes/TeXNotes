@@ -275,6 +275,22 @@ class Helper:
                 print(f'{number}: {note.filename}')
                 number += 1
 
+    def plotgraph():
+        import networkx as nx
+        from pyvis.network import Network
+
+        notes, adj = analysis.calculate_adjacency_matrix()
+
+        graph = nx.DiGraph(adj)
+        graph = nx.relabel_nodes(graph, {i: note.filename for i, note in enumerate(notes)})
+
+        nt = Network()
+        nt.toggle_physics(True)
+        nt.from_nx(graph)
+
+
+        nt.show('network.html', notebook=False)
+
 
 
 def main(args):
