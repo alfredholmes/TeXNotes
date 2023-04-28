@@ -28,7 +28,7 @@ class Helper:
 
 
     def getnotefiles(directory='notes/slipbox'):
-        notes = [str(f) for f in files.get_files(directory)]
+        notes = [str(f) for f in files.get_files(directory, '.tex')]
         return notes
 
     def createnotefile(filename):
