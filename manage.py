@@ -102,12 +102,12 @@ class Helper:
 
         for note in notes:
             filename = note[:-4] 
-            os.system(f'make4ht ../{note} svg')
+            os.system(f'make4ht -c ../config/make4ht.cfg ../{note} svg')
             os.system(f'biber {filename}')
 
         for note in notes:
             filename = note[:-4] 
-            os.system(f'make4ht ../{note} svg')
+            os.system(f'make4ht -c ..config/make4ht.cfg ../{note} svg')
        
        
     def renderallpdf():
