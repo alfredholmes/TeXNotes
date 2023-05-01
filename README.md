@@ -8,6 +8,8 @@ This is primarily intended for academics who write papers in LaTeX and want to w
 
 ### How to use
 
+See [the wiki](https://github.com/alfredholmes/LaTeX-Zettel/wiki) for detailed usage instructions.
+
 There are three main folders. `/notes`, `/template` and `/pdf`. This assumess that you want to render your notes as `pdf` documents rather than as `html` (`html` rendering also works, replacing `pdflatex` with `make4ht` but there are sometimes some issues with `hyperref` and `xr-hyper` which can be fixed by adding the flag `-c ../config/make4ht.cfg`). Inside `/notes` is where the `.tex` documents get stored. The example notes import the file `/template/preamble` which contains various package imports. The most important part of `/template/preamble.tex` is the importing of the file `/notes/documents.tex` which contains all the `\externaldocument` declarations that will allow `\cref` to reference equations in other documents. Note that the second parameter in the `\externaldocument` command is the name of the file that you want to reference. This is actually refers to the `document_name.aux`, which contains all the referencing information, rather than the `.tex` file. Hence this file name parameter should match the directory structure of the output `pdf`s, not the directory structure of your `.tex` documents. To allow all the notes to use the same `/documents.tex` it is most straightforward to render the `pdf`s from inside the `/pdf` directory. So to render notes using `pdflatex` run
 ```
 $ cd pdf
