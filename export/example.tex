@@ -25,9 +25,8 @@
     citecolor = cyan
 }
 
-
+%Theorem environment definitions
 \theoremstyle{definition}
-
 \newtheorem{definition}{Definition}[section]
 
 \newtheorem{example}[definition]{Example}
@@ -38,22 +37,34 @@
 \newtheorem{rmk}[definition]{Remark}
 \newtheorem{conj}[definition]{Conjecture}
 
-
+%Change the excref and exhyperref commands back to normal
 \newcommand{\excref}[2][note]{\cref{#1}}
 \newcommand{\exhyperref}[3][note]{\hyperref[#1]{#3}}
 
 
+\usepackage{catchfilebetweentags}
 
+%Fix newlines with catchfilebetweentags
+\usepackage{etoolbox}
+\makeatletter
+\patchcmd{\CatchFBT@Fin@l}{\endlinechar\m@ne}{}
+{}{\typeout{Unsuccessful patch!}}
+\makeatother
 
 \title{Example Export}
-\usepackage{catchfilebetweentags}
+
+
 
 \begin{document}
     \maketitle
 
     \section{Example Export}
 
-    \ExecuteMetaData[../notes/slipbox/note_name.tex]{note}
+    %Import all of a note
+    \ExecuteMetaData[../notes/slipbox/example_note.tex]{note}
+    %The note argument of ExecuteMetaData corresponds to the <*note>, </note> tags in the note template. 
+    %To import only part of a note then you can surround that part by a different tag, say <*part>...</part> and then call
+    \ExecuteMetaData[../notes/slipbox/example_note.tex]{part}
 
 
 
