@@ -25,7 +25,7 @@ To add a new note simply run
 
 this just copies the note template into the `/notes/slipbox/` folder, saving it as `new_note.tex` and adds the line 
 ```Latex
-\externaldocument{NewNote-}{new_note}
+\externaldocument[NewNote-]{new_note}
 ```
 to `/notes/documents.tex`. Any labels from the note will be able to be referenced from other notes using the command 
 ```
