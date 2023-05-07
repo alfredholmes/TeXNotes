@@ -6,6 +6,7 @@ from LatexZettel import files, database, analysis
 import re
 import os
 import peewee as pw
+import datetime
 
 class Helper:
 
@@ -44,7 +45,7 @@ class Helper:
 
 
         try:
-            with open(f'notes/{filename}.tex') as f:
+            with open(f'notes/{filename}.tex', 'r') as f:
                 pass
         except FileNotFoundError:
             shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
@@ -77,16 +78,52 @@ class Helper:
                 raise ValueError(f'A note with reference {reference} already exists in the database. If this is not the case then run manage.py synchronize to update the database, and then try again. If the problem persists check the documents.tex file is correctly setup')
                 return
             except database.Note.DoesNotExist:
-                pass
-
-
-        
+                pass 
     
         Helper.createnotefile(note_name)
         Helper.addtodocuments(note_name, reference_name)
         #once created, add note to database 
-        note = database.Note(filename=note_name, reference=reference_name)
+        note = database.Note(filename=note_name, reference=reference_name, created_at = datetime.datetime.now(), modified_date = datetime.datetime.now())
         note.save()
+
+    def removenote(filename):
+        try:
+            note = database.Note.get(filename=filename)
+            print('Delete database entry? (y/n)') 
+            if Helper.getyesno():
+                note.delete_instance()
+        except database.Note.DoesNotExist:
+            note = None
+            print(f'No note with filename {filename} exists in db')
+
+
+
+        with open('notes/documents.tex', 'r') as f:
+            lines = f.readlines()
+        
+        to_delete= []
+        for i, line in enumerate(lines):
+            m = re.search(f'(\\\\externaldocument\[)(.+?)(\-\]\{{){filename}(\}})', line)
+            if m:
+                to_delete.append(i)
+           
+        for i in reversed(to_delete):
+            print(f'delete line {lines[i].strip()} from notes/documents.tex? (y/n)')
+            if Helper.getyesno():
+                lines.pop(i)
+        
+        with open('notes/documents.tex', 'w') as f:
+            for line in lines:
+                f.write(line)
+
+
+        print(f'Delete notes/slipbox/{filename}.tex? (y/n)')
+        if Helper.getyesno():
+            try:
+                os.remove(f'notes/slipbox/{filename}.tex')
+            except FileNotFoundError:
+                print('Error, no such file exists')
+
 
     def renderallhtml():
         """
@@ -146,10 +183,10 @@ class Helper:
         """
             Reads the file documents.tex and adds these files to the database, then checks for files in /notes that aren't in the documents
         """
-
+        database.create_all_tables()
         notes = Helper.getnotefiles()
         notes = [''.join(note.split('notes/slipbox/')[1:])[:-4] for note in notes]
-        #get all the tracked notes
+        #get all the tracked notes (the ones in documents.tex)
         tracked_notes = {}
         with open('notes/documents.tex', 'r') as f:
             for line in f:
@@ -169,43 +206,76 @@ class Helper:
                         tracked_notes[filename] = reference_name
 
         for filename, reference_name in tracked_notes.items():
+            modified = datetime.datetime.fromtimestamp(os.path.getmtime(f'notes/slipbox/{filename}.tex'))
+
             try:
                 note = database.Note.get(filename=filename)
+                note.last_edit_date = modified
                 if note.reference == reference_name:
                     continue #nothing to do
+                else:
+                    #update note reference to the one in documents.tex, might want to check that this is the right thing to do
+                    note.reference = reference_name
+                note.save()
+            
             except database.Note.DoesNotExist:
                 try:
-                    note = database.Note.get(reference=filename)
+                    note = database.Note.get(reference=reference_name)
+                    #update the filename in database, might want to check that this is the right thing to do
+                    note.filename = filename
+                    note.save()
                 except database.Note.DoesNotExist:
                     #create the note if there are no close matches
-                    note = database.Note(filename=filename, reference=reference_name)
+                    note = database.Note(filename=filename, reference=reference_name, created_at=modified, last_edit_date=modified)
                     note.save()
 
 
 
         for note in notes:
+            #add any notes to documents.tex
             if note not in tracked_notes:
                 print(f'File {note} not tracked by the file documents.tex. Add to the file now? (y/n)')
                 if Helper.getyesno(): 
                     reference = ''.join([w.capitalize() for w in note.split('_')])
                     print(f'Reference (defaults to {reference}):', end='')
-                    reference = input()
-                    Helper.addtodocuments(note, reference)
+                    new_reference = input()
+                    if new_reference != "":
+                        reference = new_reference
+                    try:
+                        database.Note.create(filename=note, reference=reference)
+                        Helper.addtodocuments(note, reference)
+                    except pw.IntegrityError:
+                        print('Error adding note, note already exists in database') 
         
         #add labels
         for note in database.Note:
-            labels = Helper.getlabels(note)
+            try:
+                labels = Helper.getlabels(note)
+            except FileNotFoundError:
+                #todo: handle this error, note does not exist
+                pass
             tracked_labels = [label.label for label in note.labels]
             for label in labels:
                 if label not in tracked_labels:
                     database.Label.create(label=label, note=note)
                     print(f'created label {label}')
+
+            #remove extra labels
+            for label in note.labels:
+                if label.label not in labels:
+                    label.delete_instance()
                    
         #add connections
 
         for note in database.Note: 
-            links = Helper.getlinks(note)
+            try:
+                links = Helper.getlinks(note)
+            except FileNotFoundError:
+                #todo: handle error
+                pass
+
             tracked = [(link.target.note.reference, link.target.label) for link in note.references] 
+            #add in untracked
             for link in links:
                 if link not in tracked:
                     try:
@@ -214,6 +284,12 @@ class Helper:
                         print(f'created link, {note.filename}, {label.note.filename}, {label}')
                     except database.Label.DoesNotExist:
                         print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
+
+            #remove any that no longer exist
+            for link in note.references:
+                if (link.target.note.reference, link.target.label) not in links:
+                    print(f'link {(link.target.note.reference, link.target.label)} no longer exists, deleting')
+                    link.delete_instance().execute()
 
 
             

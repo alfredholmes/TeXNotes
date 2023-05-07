@@ -13,6 +13,7 @@ class Note(BaseModel):
     last_build_date_html = pw.DateTimeField(null=True)
     last_build_date_pdf = pw.DateTimeField(null=True)
     last_edit_date = pw.DateTimeField(null=True)
+    created = pw.DateTimeField(null=True)
 
 
 class Citation(BaseModel):
