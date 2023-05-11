@@ -9,6 +9,7 @@ import peewee as pw
 import datetime
 
 class Helper:
+    renderers = {'pdf': 'pdflatex', 'html': 'make4ht'}
 
     def help():
         print("""
@@ -45,7 +46,7 @@ class Helper:
 
 
         try:
-            with open(f'notes/{filename}.tex', 'r') as f:
+            with open(f'notes/slipbox/{filename}.tex', 'r') as f:
                 pass
         except FileNotFoundError:
             shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
@@ -124,6 +125,51 @@ class Helper:
             except FileNotFoundError:
                 print('Error, no such file exists')
 
+    
+
+    def render(filename, format='pdf'):
+        import subprocess
+        command = Helper.renderers[format]
+        
+        try:
+            os.mkdir(format)
+        except FileExistsError:
+            pass
+        os.chdir(format)
+
+
+        path_to_file = f'../notes/slipbox/{filename}.tex'
+
+
+        try:
+            with open(path_to_file, 'r'):
+                pass
+        except FileNotFoundError:
+            print('No such file!')
+            return '', f'Can\'t find {path_to_file}'
+
+
+        process = subprocess.Popen([command, '--interaction=nonstopmode', path_to_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        os.chdir('../')
+
+        return process.communicate()
+
+        
+
+    def renderall(format='pdf'):
+        pass
+
+        
+    def biber(filename, folder='pdf'):
+        import subprocess
+        os.chdir(folder)
+        process = subprocess.Popen(['biber', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        output, error = process.communicate()
+        os.chdir('../')
+
+        return output, error
+        
 
     def renderallhtml():
         """
@@ -151,23 +197,35 @@ class Helper:
         """
             Renderes all the notes using pdflatex. Saves output in /pdf
         """
+        import subprocess
         
         notes = Helper.getnotefiles()
-        try:
-            os.mkdir('pdf')
-        except FileExistsError:
-            pass
-        os.chdir('pdf')
+        
 
+        print('render pass 1')
         for note in notes:
             filename = ''.join(note[:-4].split('notes/slipbox/')[1:])
-            os.system(f'pdflatex ../{note} svg')
-            os.system(f'biber {filename}')
-
+            print(f'rendering {filename}...', end='')
+            output, error = Helper.render(filename) 
+            if error == b'':
+                print('done')
+                print('running biber...', end='')
+                output, error = Helper.biber(filename)
+                print('done')
+            else:
+                print('error!')
+                print(error)
+        
+        print('render pass 2')
         for note in notes:
-            filename = note[:-4] 
-            os.system(f'pdflatex ../{note} svg')
-
+            filename = ''.join(note[:-4].split('notes/slipbox/')[1:])
+            print(f'rendering {filename}...', end='')
+            output, error = Helper.render(filename)
+            if error == '':
+                print('done')
+            else:
+                print('\n',error)
+                
 
     def getyesno():
         while True:
