@@ -149,11 +149,11 @@ class Helper:
             return '', f'Can\'t find {path_to_file}'
 
 
-        process = subprocess.Popen([command, '--interaction=nonstopmode', path_to_file], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        process = subprocess.run([command, '--interaction=nonstopmode', path_to_file], capture_output=True)
 
         os.chdir('../')
 
-        return process.communicate()
+        return process.stdout, process.stderr
 
         
 
@@ -164,8 +164,8 @@ class Helper:
     def biber(filename, folder='pdf'):
         import subprocess
         os.chdir(folder)
-        process = subprocess.Popen(['biber', filename], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-        output, error = process.communicate()
+        process = subprocess.run(['biber', filename], capture_output=True)
+        output, error = process.stdout, process.stderr
         os.chdir('../')
 
         return output, error
