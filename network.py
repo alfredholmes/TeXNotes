@@ -42,6 +42,8 @@ class App(tk.Tk):
         self.network = network
         self.positions = nx.nx_agraph.graphviz_layout(self.network)
 
+        with open('network.tex', 'w') as f:
+            f.write(nx.to_latex(self.network))
 
 
         #calculate positions

@@ -347,7 +347,7 @@ class Helper:
             for link in note.references:
                 if (link.target.note.reference, link.target.label) not in links:
                     print(f'link {(link.target.note.reference, link.target.label)} no longer exists, deleting')
-                    link.delete_instance().execute()
+                    link.delete_instance()
 
 
             
