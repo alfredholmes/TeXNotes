@@ -375,9 +375,13 @@ class Helper:
         file_references = []
         with open(f'notes/slipbox/{note.filename}.tex') as f:
             for line in f:
-                links = re.finditer('\\\\ex(hyper)?(c)?ref\[(.*?)\]\{(.*?)\}', line)
+                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}', line)
                 for link in links:
-                    file_references.append((link.group(4), link.group(3))) 
+                    if link.group(4) is None:
+                        ref = 'note'
+                    else:
+                        ref = link.group(5) 
+                        file_references.append((ref, link.group(4))) 
         return file_references
 
     def gettags():
