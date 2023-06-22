@@ -1,6 +1,10 @@
 # LaTeX-Zettel - Zettelkasten written with LaTeX.
 Zettelkasten or Slip box with notes written in LaTeX. 
 
+### Mailing List
+
+To receive email updates about new features and general information about the projecct, subscribe to the mailing list [here](https://www.freelists.org/list/latexzettel) or send an email with subject 'subscribe' to latexzettel-request@freelists.org.
+
 ### Why Do This?
 
 This is primarily intended for academics who write papers in LaTeX and want to write notes using the Zettelkasten method that are easily exportable into a full LaTeX document. The other benefits are being able to define theorem environments and using biber or bibtex reference management. This repository is essentially a template to start a new slip box. There is a python script `manage.py` that adds a few functions but you could do this all in latex.
