@@ -5,6 +5,25 @@ Zettelkasten or Slip box with notes written in LaTeX.
 
 To receive email updates about new features and general information about the projecct, subscribe to the mailing list [here](https://www.freelists.org/list/latexzettel) or send an email with subject 'subscribe' to latexzettel-request@freelists.org.
 
+### Current Features
+
+* Internote referencing commands - render Zettelkasten with PDFLaTeX
+* Biber support for citations (works well with, for example, Zotero auto export).
+* Helper scripts to create new notes from LaTeX templates
+* Automated analysis of the Zettelkasten - creates a database from the notes with details of the connections between notes.
+* Native python 'network view' of Zettelkasten ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Network-View)).
+* Ability to export multiple notes into a LaTeX document ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Export-Notes-as-Latex-Document)). 
+
+### Planned Features
+
+* Markdown support with Pandoc
+* Customizable templates, and different templates for different notes
+* Draw a path on the network view to write a draft of a paper
+* Export notes as a '.tex' file, rather than a LaTeX document that references other notes that can then be rendered
+* HTML rendering (this is currently implemented but has some bugs).
+* Import notes from an existing .tex file - split up already written documents into atomic notes by adding comments to the .tex file that describe the desired notes.
+
+
 ### Why Do This?
 
 This is primarily intended for academics who write papers in LaTeX and want to write notes using the Zettelkasten method that are easily exportable into a full LaTeX document. The other benefits are being able to define theorem environments and using biber or bibtex reference management. This repository is essentially a template to start a new slip box. There is a python script `manage.py` that adds a few functions but you could do this all in latex.
