@@ -3,6 +3,7 @@ export/*
 !export/example.tex
 html/*
 pdf/*
+markdown/*
 renders/*
 *.db
 *.bib

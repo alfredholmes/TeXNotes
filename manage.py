@@ -9,7 +9,7 @@ import peewee as pw
 import datetime
 
 class Helper:
-    renderers = {'pdf': 'pdflatex', 'html': 'make4ht'}
+    renderers = {'pdf': ['pdflatex', ['--interaction=nonstopmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
@@ -48,11 +48,25 @@ class Helper:
         try:
             with open(f'notes/slipbox/{filename}.tex', 'r') as f:
                 pass
-        except FileNotFoundError:
-            shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
+            print(f'File notes/{filename}.tex already exists, skipping copying the template')
             return
+        except FileNotFoundError:
+            pass
 
-        print(f'File notes/{filename}.tex already exists, skipping copying the template')
+        
+        shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
+        file = bytearray()
+        title = ' '.join([s.capitalize() for s in filename.split('_')])
+
+        with open('template/note.tex', 'r') as f:
+            for line in f:
+                file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
+
+        with open(f'notes/slipbox/{filename}.tex', 'wb') as f:
+            f.write(file)
+
+                
+
     
 
     def newnote(note_name, reference_name=""):
@@ -69,7 +83,7 @@ class Helper:
         #see if the note already exists
         try:
             note = database.Note.get(filename=note_name)
-            raise ValueError(f'A note with file name {filename} already exists in the database. If this is not the case then run manage.py synchronize to update the database, and then try again')
+            raise ValueError(f'A note with file name {note_name} already exists in the database. If this is not the case then run manage.py synchronize to update the database, and then try again')
             return 
         except pw.OperationalError:
             database.create_all_tables()
@@ -129,7 +143,7 @@ class Helper:
 
     def render(filename, format='pdf'):
         import subprocess
-        command = Helper.renderers[format]
+        command, options = Helper.renderers[format]
         
         try:
             os.mkdir(format)
@@ -149,10 +163,10 @@ class Helper:
             return '', f'Can\'t find {path_to_file}'
 
 
-        process = subprocess.run([command, '--interaction=nonstopmode', path_to_file], capture_output=True)
+        process = subprocess.run([command, *options, path_to_file], capture_output=True)
 
         os.chdir('../')
-
+        print(process.stdout, process.stderr)
         return process.stdout, process.stderr
 
         
@@ -380,8 +394,8 @@ class Helper:
                     if link.group(4) is None:
                         ref = 'note'
                     else:
-                        ref = link.group(5) 
-                        file_references.append((ref, link.group(4))) 
+                        ref = link.group(4) 
+                    file_references.append((link.group(5), ref)) 
         return file_references
 
     def gettags():
@@ -413,23 +427,68 @@ class Helper:
                 print(f'{number}: {note.filename}')
                 number += 1
 
-    def plotgraph():
-        import networkx as nx
-        from pyvis.network import Network
-
-        notes, adj = analysis.calculate_adjacency_matrix()
-
-        graph = nx.DiGraph(adj)
-        graph = nx.relabel_nodes(graph, {i: note.filename for i, note in enumerate(notes)})
-
-        nt = Network('1080px', '1920px', directed=True)
-        nt.toggle_physics(True)
-        nt.from_nx(graph)
+    def edit(filename=None):
+        import subprocess
+        os.chdir('notes/slipbox')
+        if filename is None:
+            subprocess.call(['xdg-open', 'index.tex'])
+        else:
+            subprocess.call(['xdg-open', filename])
 
 
-        nt.show('network.html', notebook=False)
+    def to_md(note_name):
+        def replace_string(m, md_links):
+            replacement = '[['
+            label = ''
+            if m.group(1) is None and m.group(2) == 'c':
+                replacement += md_links[(m.group(5), m.group(4))]
+            elif m.group(1) == 'hyper':
+                replacement += md_links[(m.group(5), m.group(4))] + '|' + m.group(7)
+
+            print(replacement)
+
+            return replacement + ']]'
+        # load the file and convert exhyperref and excref to Wiki links
+        file = []
+        file_references = []
+        with open(f'notes/slipbox/{note_name}.tex', 'r') as f:
+            for line in f:
+                file.append(line)
+                links = re.finditer('\\\\ex?(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}', line)
+                for link in links:
+                    if link.group(4) is None:
+                        label = 'note'
+                    else:
+                        label = link.group(4) 
+                    file_references.append((link.group(5), label)) 
+                                 
+        md_links = {} 
+        for ref, tex_label in file_references:
+            try:
+                note = database.Note.get(reference=ref)
+            except database.Note.DoesNotExist:
+                note = None
+
+            if tex_label == 'note':
+                md_links[(ref, tex_label)] = note.filename
+            else:
+                md_links[(ref, tex_label)] = f'{note.filename}#{tex_label}'
+        new_file = bytearray()
+        for line in file:
+            new_file.extend((re.sub('\\\\ex(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}(\{(.*?)\})?', lambda m : replace_string(m, md_links), line)).encode())
+
+        import subprocess
+
+        print(new_file)
+
+        p = subprocess.run(["pandoc", "-t", "markdown", "-f", "latex", "-o", f"markdown/{note_name}.md" ], input=new_file, capture_output=True)
+
+        print(p.stdout, p.stderr)
 
 
+
+
+         
 
 def main(args):
     try:
