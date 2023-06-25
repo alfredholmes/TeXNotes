@@ -101,7 +101,89 @@ class Helper:
         note = database.Note(filename=note_name, reference=reference_name, created_at = datetime.datetime.now(), modified_date = datetime.datetime.now())
         note.save()
 
+    def rename_file(old_filename, new_filename):
+        """
+            Rename the .tex file, fairly straightforward since only need to change documents.tex
+        """
+        try:
+            with open(f'notes/slipbox/{new_filename}.tex', 'r'):
+                pass
+            raise ValueError(f'File, {new_filename}.tex already exists')
+        except FileNotFoundError:
+            pass
+        #copy file
+        shutil.copy(f'notes/slipbox/{old_filename}.tex', f'notes/slipbox/{new_filename}.tex')
+
+        os.remove(f'notes/slipbox/{old_filename}.tex')
+
+        #change documents.tex
+        note = database.Note.get(filename=old_filename)
+        note.filename = new_filename
+
+        note.save()
+
+        lines = bytearray()
+
+        with open('notes/documents.tex', 'r') as f:
+            for line in f:
+                lines.extend(re.sub('\\\\externaldocument\[' + note.reference + '\-\]\{' + old_filename + '\}', '\\\\externaldocument[' + note.reference + '-]{' + new_filename + '}', line).encode())
+
+
+        with open('notes/documents.tex', 'wb') as f:
+            f.write(lines)
+        
+
+    def rename_reference(old_reference, new_reference):
+        """
+            Rename the reference used for a note. This function changes documents.tex and also any documents that reference this note.
+        """
+
+        #function for regex replacement
+        def replace_text(m):
+            if m.group(1) is None and m.group(3) is None:
+                return f'\\\\excref{new_reference}'
+            elif m.group(1) is None and m.group(3) is not None:
+                return f'\\\\excref[{m.group(4)}]{{{new_reference}}}'
+            elif m.group(1) is not None and m.group(3) is None:
+                return f'\\\\exhyperref{new_reference}'
+            elif m.group(1) is not None:
+                return f'\\\\exhyperref[{m.group(4)}]{{{new_reference}}}'
+
+
+        # Update documents.tex
+
+        note = database.Note.get(reference=old_reference)
+
+        lines = bytearray()
+
+        with open('notes/documents.tex', 'r') as f:
+            for line in f:
+                lines.extend(re.sub('\\\\externaldocument\[' + note.reference + '\-\]\{' + note.filename + '\}', '\\\\externaldocument[' + new_reference + '-]{' + note.filename + '}', line).encode())
+        
+        with open('notes/documents.tex', 'wb') as f:
+            f.write(lines)
+
+
+        for label in note.labels: 
+            backrefs = set()
+            for backref in label.referenced_by:
+                backrefs.add(backref)
+            for backref in backrefs:
+                lines = bytearray()
+                with open(f'notes/slipbox/{backref.source.filename}.tex', 'r') as f:
+                    for line in f:
+                        lines.extend(re.sub('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{' + old_reference + '\}', lambda m: replace_text(m), line).encode())
+
+                with open(f'notes/slipbox/{backref.source.filename}.tex', 'wb') as f:
+                    f.write(lines)
+                        
+        note.save()
+
+
     def removenote(filename):
+        """
+            Delete a note with given filename
+        """
         try:
             note = database.Note.get(filename=filename)
             print('Delete database entry? (y/n)') 
@@ -389,7 +471,7 @@ class Helper:
         file_references = []
         with open(f'notes/slipbox/{note.filename}.tex') as f:
             for line in f:
-                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}', line)
+                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
                 for link in links:
                     if link.group(4) is None:
                         ref = 'note'
@@ -454,7 +536,7 @@ class Helper:
         with open(f'notes/slipbox/{note_name}.tex', 'r') as f:
             for line in f:
                 file.append(line)
-                links = re.finditer('\\\\ex?(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}', line)
+                links = re.finditer('\\\\ex?(hyper)?(c)?ref(\[([^]+)\])?\{(.*?)\}', line)
                 for link in links:
                     if link.group(4) is None:
                         label = 'note'
@@ -475,7 +557,7 @@ class Helper:
                 md_links[(ref, tex_label)] = f'{note.filename}#{tex_label}'
         new_file = bytearray()
         for line in file:
-            new_file.extend((re.sub('\\\\ex(hyper)?(c)?ref(\[(.*?)\])?\{(.*?)\}(\{(.*?)\})?', lambda m : replace_string(m, md_links), line)).encode())
+            new_file.extend((re.sub('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}(\{(.*?)\})?', lambda m : replace_string(m, md_links), line)).encode())
 
         import subprocess
 

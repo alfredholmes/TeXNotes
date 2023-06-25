@@ -1,3 +1,4 @@
+#!/bin/python3
 import tkinter as tk
 import networkx as nx
 import numpy as np
@@ -21,7 +22,8 @@ class App(tk.Tk):
 
     def __init__(self, network):
         super().__init__()
-        self.canvas = tk.Canvas(self, width=1000, height=700, bg='white')
+        self.title('LaTeX Zettel Network')
+        self.canvas = tk.Canvas(self, width=1000, height=700, bg='white', bd=0, highlightthickness=0)
         self.canvas.pack(expand=True)
         self.update()
         
