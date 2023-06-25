@@ -9,12 +9,23 @@ import peewee as pw
 import datetime
 
 class Helper:
+    """
+        Collection of functions for managing a LaTeX Zettelkasten. Each of these functions can be run from the command line by running
+
+        `python manage.py function_name arg1 arg2 ...`
+
+        For example, running 
+
+        `python manage.py newnote note_name`
+
+        executes `Hepler.newnote(note_name)`.
+
+    """
     renderers = {'pdf': ['pdflatex', ['--interaction=nonstopmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
-
-            Manage the LaTeX slip box. This file should never be executed with the working directory not the base directory of the slipbox project.
+            Manage the LaTeX slip box. The file manage.py is documented with docstrings, see /docs for detailed information
         """)
 
     def addtodocuments(filename, reference=""):
@@ -27,51 +38,13 @@ class Helper:
         with open('notes/documents.tex', 'a') as f:
             f.write(f'\externaldocument[{reference}-]{{{filename}}}\n')
 
-
-
-    def getnotefiles(directory='notes/slipbox'):
-        notes = [str(f) for f in files.get_files(directory, '.tex')]
-        return notes
-
-    def createnotefile(filename):
-        try:
-            os.mkdir('notes')
-        except FileExistsError:
-            pass
-
-        try:
-            os.mkdir('notes/slipbox')
-        except FileExistsError:
-            pass
-
-
-        try:
-            with open(f'notes/slipbox/{filename}.tex', 'r') as f:
-                pass
-            print(f'File notes/{filename}.tex already exists, skipping copying the template')
-            return
-        except FileNotFoundError:
-            pass
-
-        
-        shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
-        file = bytearray()
-        title = ' '.join([s.capitalize() for s in filename.split('_')])
-
-        with open('template/note.tex', 'r') as f:
-            for line in f:
-                file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
-
-        with open(f'notes/slipbox/{filename}.tex', 'wb') as f:
-            f.write(file)
-
                 
 
     
 
     def newnote(note_name, reference_name=""):
         """
-            createnote note_name [Optional ReferenceName]
+            Makes a new note with name note_name [Optional ReferenceName]
             Creates note with name note_name.tex, Second argument is optional and is the name in the reference, defaults to NoteName
 
             to do: check whether a file already exists etc
@@ -95,7 +68,7 @@ class Helper:
             except database.Note.DoesNotExist:
                 pass 
     
-        Helper.createnotefile(note_name)
+        Helper.__createnotefile(note_name)
         Helper.addtodocuments(note_name, reference_name)
         #once created, add note to database 
         note = database.Note(filename=note_name, reference=reference_name, created_at = datetime.datetime.now(), modified_date = datetime.datetime.now())
@@ -135,7 +108,7 @@ class Helper:
 
     def rename_reference(old_reference, new_reference):
         """
-            Rename the reference used for a note. This function changes documents.tex and also any documents that reference this note.
+            Rename the reference used throughout the whole Zettelkasten. This function changes documents.tex and also any documents that reference this note.
         """
 
         #function for regex replacement
@@ -187,7 +160,7 @@ class Helper:
         try:
             note = database.Note.get(filename=filename)
             print('Delete database entry? (y/n)') 
-            if Helper.getyesno():
+            if Helper.__getyesno():
                 note.delete_instance()
         except database.Note.DoesNotExist:
             note = None
@@ -206,7 +179,7 @@ class Helper:
            
         for i in reversed(to_delete):
             print(f'delete line {lines[i].strip()} from notes/documents.tex? (y/n)')
-            if Helper.getyesno():
+            if Helper.__getyesno():
                 lines.pop(i)
         
         with open('notes/documents.tex', 'w') as f:
@@ -215,7 +188,7 @@ class Helper:
 
 
         print(f'Delete notes/slipbox/{filename}.tex? (y/n)')
-        if Helper.getyesno():
+        if Helper.__getyesno():
             try:
                 os.remove(f'notes/slipbox/{filename}.tex')
             except FileNotFoundError:
@@ -224,6 +197,11 @@ class Helper:
     
 
     def render(filename, format='pdf'):
+        """
+
+            Render the LaTeX file. By default renders as a pdf and output is stored in the folder /pdf. The other format option is html, although support is currently experimental.
+
+        """
         import subprocess
         command, options = Helper.renderers[format]
         
@@ -254,10 +232,18 @@ class Helper:
         
 
     def renderall(format='pdf'):
+        """
+            Function to replace renderallhtml and renderallpdf, rendering notes in a sensible order with regards to dependencies for PDFLaTeX links. Not currently implemented.
+        """
         pass
 
         
     def biber(filename, folder='pdf'):
+        """
+
+            Run biber on the render of the note. Folder can be either html or pdf, depending on the format.
+
+        """
         import subprocess
         os.chdir(folder)
         process = subprocess.run(['biber', filename], capture_output=True)
@@ -272,7 +258,7 @@ class Helper:
             Renderes all the notes using make4ht. Saves output in /html
         """
 
-        notes = Helper.getnotefiles()
+        notes = Helper.__getnotefiles()
         try:
             os.mkdir('html')
         except FileExistsError:
@@ -295,7 +281,7 @@ class Helper:
         """
         import subprocess
         
-        notes = Helper.getnotefiles()
+        notes = Helper.__getnotefiles()
         
 
         print('render pass 1')
@@ -321,24 +307,13 @@ class Helper:
                 print('done')
             else:
                 print('\n',error)
-                
-
-    def getyesno():
-        while True:
-            a = input()
-            if a == 'y':
-                return True
-            elif a == 'n':
-                return False
-            else:
-                print('Please enter either \'y\' or \'n\'')
 
     def synchronize():
         """
-            Reads the file documents.tex and adds these files to the database, then checks for files in /notes that aren't in the documents
+            Reads the file documents.tex and adds these files to the database (/slipbox.db), then checks for files in /notes that aren't in the documents
         """
         database.create_all_tables()
-        notes = Helper.getnotefiles()
+        notes = Helper.__getnotefiles()
         notes = [''.join(note.split('notes/slipbox/')[1:])[:-4] for note in notes]
         #get all the tracked notes (the ones in documents.tex)
         tracked_notes = {}
@@ -352,8 +327,8 @@ class Helper:
 
                     if filename not in notes:
                         print(f'File {filename} with reference {reference_name} missing from notes. Make new note now? (y/n)')
-                        if Helper.getyesno():
-                            Helper.createnotefile(filename)
+                        if Helper.__getyesno():
+                            Helper.__createnotefile(filename)
                             tracked_notes[filename] = reference_name
                             
                     else:
@@ -389,7 +364,7 @@ class Helper:
             #add any notes to documents.tex
             if note not in tracked_notes:
                 print(f'File {note} not tracked by the file documents.tex. Add to the file now? (y/n)')
-                if Helper.getyesno(): 
+                if Helper.__getyesno(): 
                     reference = ''.join([w.capitalize() for w in note.split('_')])
                     print(f'Reference (defaults to {reference}):', end='')
                     new_reference = input()
@@ -404,7 +379,7 @@ class Helper:
         #add labels
         for note in database.Note:
             try:
-                labels = Helper.getlabels(note)
+                labels = Helper.__getlabels(note)
             except FileNotFoundError:
                 #todo: handle this error, note does not exist
                 pass
@@ -423,7 +398,7 @@ class Helper:
 
         for note in database.Note: 
             try:
-                links = Helper.getlinks(note)
+                links = Helper.__getlinks(note)
             except FileNotFoundError:
                 #todo: handle error
                 pass
@@ -448,56 +423,11 @@ class Helper:
 
             
 
-
-
-    def getlabels(note):
-        file_labels = []
-        with open(f'notes/slipbox/{note.filename}.tex') as f:
-            for line in f:
-                labels = re.search('(\\\\(label|currentdoc)\{)(.*?)(\})', line)
-                try:
-                    label = labels.group(3)
-                    file_labels.append(label)
-                except AttributeError:
-                    pass
-
-        return file_labels
-
-
-
-
-    def getlinks(note):
-        notes = Helper.getnotefiles()
-        file_references = []
-        with open(f'notes/slipbox/{note.filename}.tex') as f:
-            for line in f:
-                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
-                for link in links:
-                    if link.group(4) is None:
-                        ref = 'note'
-                    else:
-                        ref = link.group(4) 
-                    file_references.append((link.group(5), ref)) 
-        return file_references
-
-    def gettags():
-        notes = Helper.getnotefiles()
-        tags = {}
-        for note in notes:
-            with open(note) as f:
-                lines = f.read().splitlines()
-                last_line = lines[-1]
-                if re.search("\\\\end\{document\}", last_line) is None:
-                    note_tags = [f.lower() for f in last_line.strip().split(",")]
-                    for tag in note_tags:
-                        tags[tag] = ('notes/'.join(note.split('notes/')[1:]))[:-4]
-
-
-        print(tags)
-
-
                         
     def listunreferenced():
+        """
+            Prints a list of notes that are not referenced in any other note. These might want to be added to the index, for example. 
+        """
         import numpy as np
         notes, adj_matrix = analysis.calculate_adjacency_matrix()
 
@@ -510,6 +440,11 @@ class Helper:
                 number += 1
 
     def edit(filename=None):
+        """
+
+            Open the note default text editor in the directory /notes/slipbox. If no file is passed then this opens 
+
+        """
         import subprocess
         os.chdir('notes/slipbox')
         if filename is None:
@@ -519,6 +454,10 @@ class Helper:
 
 
     def to_md(note_name):
+        """            
+            Work in progress. Export a LaTeX document note to markdown, and convert references to [[WikiLink]] style references.
+
+        """
         def replace_string(m, md_links):
             replacement = '[['
             label = ''
@@ -570,9 +509,110 @@ class Helper:
 
 
 
+
+    def __getnotefiles(directory='notes/slipbox'):
+        notes = [str(f) for f in files.get_files(directory, '.tex')]
+        return notes
+
+    def __createnotefile(filename):
+        try:
+            os.mkdir('notes')
+        except FileExistsError:
+            pass
+
+        try:
+            os.mkdir('notes/slipbox')
+        except FileExistsError:
+            pass
+
+
+        try:
+            with open(f'notes/slipbox/{filename}.tex', 'r') as f:
+                pass
+            print(f'File notes/{filename}.tex already exists, skipping copying the template')
+            return
+        except FileNotFoundError:
+            pass
+
+        
+        shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
+        file = bytearray()
+        title = ' '.join([s.capitalize() for s in filename.split('_')])
+
+        with open('template/note.tex', 'r') as f:
+            for line in f:
+                file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
+
+        with open(f'notes/slipbox/{filename}.tex', 'wb') as f:
+            f.write(file)
+
+
+
+
+    def __getlabels(note):
+        file_labels = []
+        with open(f'notes/slipbox/{note.filename}.tex') as f:
+            for line in f:
+                labels = re.search('(\\\\(label|currentdoc)\{)(.*?)(\})', line)
+                try:
+                    label = labels.group(3)
+                    file_labels.append(label)
+                except AttributeError:
+                    pass
+
+        return file_labels
+
+
+
+
+    def __getlinks(note):
+        notes = Helper.__getnotefiles()
+        file_references = []
+        with open(f'notes/slipbox/{note.filename}.tex') as f:
+            for line in f:
+                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
+                for link in links:
+                    if link.group(4) is None:
+                        ref = 'note'
+                    else:
+                        ref = link.group(4) 
+                    file_references.append((link.group(5), ref)) 
+        return file_references
+
+    def __gettags():
+        notes = Helper.__getnotefiles()
+        tags = {}
+        for note in notes:
+            with open(note) as f:
+                lines = f.read().splitlines()
+                last_line = lines[-1]
+                if re.search("\\\\end\{document\}", last_line) is None:
+                    note_tags = [f.lower() for f in last_line.strip().split(",")]
+                    for tag in note_tags:
+                        tags[tag] = ('notes/'.join(note.split('notes/')[1:]))[:-4]
+
+
+        print(tags)
+
+
+                
+    def __getyesno():
+        while True:
+            a = input()
+            if a == 'y':
+                return True
+            elif a == 'n':
+                return False
+            else:
+                print('Please enter either \'y\' or \'n\'')
          
 
 def main(args):
+    """
+        
+        Execute the helper functions from the command line.
+
+    """
     try:
         func = args[1]
     except IndexError:
