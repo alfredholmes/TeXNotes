@@ -63,21 +63,10 @@ which is defined in `/template/preamble.tex`. This will use `cref` to generate t
 ```
 also defined in `/template/preamble.tex`. This creates a hyperlink to the item labelled `reference label` in `new_note.tex` with the text `hyperlink text`. If the optional parameter is ommited then `\exhyperref` and `\excref` will reference the label `note` which in the default template is inserted just after the title.
 
-### `manage.py` helper scripts
+### `manage.py` helper script
 
-The `manage.py` python script contains shortcuts for many frequently executed actions. These include
+See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation.
 
-`$ ./manage.py newnote note_name [optional cref name, defaults to NoteName = name.split('-') then capitalized and concatenated]`.
-
-There is also, at the moment 
-
-`$ ./manage.py renderallpdf `
-
-and
-
-`$ ./manage.py renderallhtml`
-
-although these may be removed to incourage the use of `latexmk` and similar systems and make the project easier to maintain cross platform support.
 
 
 
