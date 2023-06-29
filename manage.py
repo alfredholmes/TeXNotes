@@ -510,6 +510,9 @@ class Helper:
 
 
     def export_draft(input_file, output_file=None):
+        """
+            Exports the export input_file (a file like /export/example.tex containing \ExecuteMetaData calls) and creates a .tex file (by default in /draft/filename.tex) where the \ExecuteMetadata commands are replaced with the body of the notes that they reference.
+        """
         if output_file is None:
             try:
                 os.mkdir('draft')
