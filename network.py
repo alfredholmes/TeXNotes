@@ -1,4 +1,4 @@
-#!/bin/python3
+#!/usr/bin/python3
 import tkinter as tk
 import networkx as nx
 import numpy as np
@@ -133,7 +133,7 @@ class App(tk.Tk):
     def _add_node_circle(self, node):
         x, y = self.convert_coordinates(self.nodes[node].x, self.nodes[node].y)
         node_id = self.canvas.create_oval(x-self.radius, y-self.radius, x+self.radius, y+self.radius, outline='black', fill=self.circle_color)
-        text_id = self.canvas.create_text(x, y + self.radius * 2.5, text=node)
+        text_id = self.canvas.create_text(x, y + self.radius * 2.5, text=' '.join([s.capitalize() for s in node.split('_')]))
         return node_id, text_id
 
     def _calculate_end_offset(self, x0, y0, x1, y1):

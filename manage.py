@@ -20,6 +20,8 @@ class Helper:
 
         executes `Hepler.newnote(note_name)`.
 
+        These can be executed by hand (for now). The plan for the future is to get other applications (eg a text editor) to run these functions.
+
     """
     renderers = {'pdf': ['pdflatex', ['--interaction=nonstopmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
@@ -450,7 +452,7 @@ class Helper:
         if filename is None:
             subprocess.call(['xdg-open', 'index.tex'])
         else:
-            subprocess.call(['xdg-open', filename])
+            subprocess.call(['xdg-open', f'{filename}.tex'])
 
 
     def to_md(note_name):
@@ -505,6 +507,34 @@ class Helper:
         p = subprocess.run(["pandoc", "-t", "markdown", "-f", "latex", "-o", f"markdown/{note_name}.md" ], input=new_file, capture_output=True)
 
         print(p.stdout, p.stderr)
+
+
+    def export_draft(input_file, output_file=None):
+        if output_file is None:
+            try:
+                os.mkdir('draft')
+            except FileExistsError:
+                pass
+            filename = input_file.split('/')[-1]
+            output_file = f'draft/{filename}'
+
+        output = bytearray()
+    
+        with open(input_file, 'r') as f:
+            for line in f:
+                output.extend((re.sub('\\\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', '', line).strip() + '\n').encode())
+                external_documents = re.finditer('\\\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', line)
+                for document in external_documents:
+                    import_file = document.group(1) 
+                    tag = document.group(2)
+                    with open(import_file, 'r') as in_file:
+                        import_text_file = in_file.read()
+                        import_text = re.search(f'%<\*{tag}>((.|\n)*?)%</{tag}>', import_text_file)
+                        output.extend(import_text.group(1).strip().encode())
+
+
+        with open(output_file, 'wb') as f:
+            f.write(output)
 
 
 
@@ -594,6 +624,8 @@ class Helper:
 
         print(tags)
 
+    
+    
 
                 
     def __getyesno():
