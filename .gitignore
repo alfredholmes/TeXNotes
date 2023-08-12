@@ -6,6 +6,7 @@ html/*
 pdf/*
 markdown/*
 renders/*
+resources/*
 *.db
 *.bib
 

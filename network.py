@@ -1,4 +1,4 @@
-#!/usr/bin/python3
+#!/usr/bin/env python
 import tkinter as tk
 import networkx as nx
 import numpy as np

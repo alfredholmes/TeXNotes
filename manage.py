@@ -23,7 +23,7 @@ class Helper:
         These can be executed by hand (for now). The plan for the future is to get other applications (eg a text editor) to run these functions.
 
     """
-    renderers = {'pdf': ['pdflatex', ['--interaction=nonstopmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
+    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
@@ -75,6 +75,42 @@ class Helper:
         #once created, add note to database 
         note = database.Note(filename=note_name, reference=reference_name, created_at = datetime.datetime.now(), modified_date = datetime.datetime.now())
         note.save()
+
+
+
+    def list_recent_files(n = 10):
+        """
+            List the most recently edited files.
+        """
+
+        recent_files = Helper.__get_recent_files(int(n))
+
+        for i, f in enumerate(recent_files):
+            print(f'{i + 1}:\t', f.split('/')[2][:-4])
+
+
+
+
+    def rename_recent(n = 1):
+        """
+            Rename the most recent nth file.
+
+        """
+        n = int(n)
+
+        file = Helper.__get_recent_files(int(n))[n-1].split('/')[2][:-4]
+
+        db_file = database.Note.get(filename=file)
+        
+        new_name = input(f"Change file name to [{file}]: ") or db_file.filename
+        new_reference = input(f"Change reference to [{db_file.reference}]: ") or db_file.reference
+
+
+        if new_name != db_file.filename:
+            Helper.rename_file(db_file.filename, new_name)
+
+        if new_reference != db_file.reference:
+            Helper.rename_reference(db_file.reference, new_reference)
 
     def rename_file(old_filename, new_filename):
         """
@@ -151,11 +187,13 @@ class Helper:
 
                 with open(f'notes/slipbox/{backref.source.filename}.tex', 'wb') as f:
                     f.write(lines)
-                        
+        
+        #update note db
+        note.reference = new_reference
         note.save()
 
 
-    def removenote(filename):
+    def remove_note(filename):
         """
             Delete a note with given filename
         """
@@ -211,6 +249,25 @@ class Helper:
             os.mkdir(format)
         except FileExistsError:
             pass
+
+        
+        note = database.Note.get(filename=filename)
+        linked_files = set()
+
+
+        for label in note.labels:
+            for link in label.referenced_by:
+                linked_files.add(link.source.reference)
+             
+       
+        referenced_by_section = "\\section*{Referenced In}\n\\begin{itemize}\n"
+        for reference in linked_files:
+            referenced_by_section += f"\\item \\excref{{{reference}}}"
+
+        referenced_by_section += "\\end{itemize}"
+
+        
+
         os.chdir(format)
 
 
@@ -225,7 +282,29 @@ class Helper:
             return '', f'Can\'t find {path_to_file}'
 
 
-        process = subprocess.run([command, *options, path_to_file], capture_output=True)
+        with open(path_to_file, 'r') as f:
+            contents = f.read()
+
+        
+        options.extend([f"--jobname={filename}"])
+
+
+
+    
+    
+
+
+        document = contents.split('\\end{document}')[0]
+
+        if len(linked_files) > 0:
+            document += referenced_by_section
+
+
+        document += "\\end{document}"
+
+        
+
+        process = subprocess.run([command, *options], input=document.encode(), capture_output=True)
 
         os.chdir('../')
         print(process.stdout, process.stderr)
@@ -233,7 +312,7 @@ class Helper:
 
         
 
-    def renderall(format='pdf'):
+    def render_all(format='pdf'):
         """
             Function to replace renderallhtml and renderallpdf, rendering notes in a sensible order with regards to dependencies for PDFLaTeX links. Not currently implemented.
         """
@@ -255,7 +334,7 @@ class Helper:
         return output, error
         
 
-    def renderallhtml():
+    def render_all_html():
         """
             Renderes all the notes using make4ht. Saves output in /html
         """
@@ -277,7 +356,7 @@ class Helper:
             os.system(f'make4ht -c ..config/make4ht.cfg ../{note} svg')
        
        
-    def renderallpdf():
+    def render_all_pdf():
         """
             Renderes all the notes using pdflatex. Saves output in /pdf
         """
@@ -426,7 +505,7 @@ class Helper:
             
 
                         
-    def listunreferenced():
+    def list_unreferenced():
         """
             Prints a list of notes that are not referenced in any other note. These might want to be added to the index, for example. 
         """
@@ -447,10 +526,12 @@ class Helper:
             Open the note default text editor in the directory /notes/slipbox. If no file is passed then this opens 
 
         """
+
+        most_recent = Helper.__get_recent_files(1)[0]
         import subprocess
         os.chdir('notes/slipbox')
         if filename is None:
-            subprocess.call(['xdg-open', 'index.tex'])
+            subprocess.call(['xdg-open', f'{most_recent.split("/")[2]}'])
         else:
             subprocess.call(['xdg-open', f'{filename}.tex'])
 
@@ -629,6 +710,31 @@ class Helper:
 
     
     
+    def __get_recent_files(n = -1):
+        files = Helper.__getnotefiles()
+
+        print(len(files))
+
+        if int(n) <= 0:
+            n = len(files)
+       
+        file_dict = {}
+        for file in files:
+            time = os.path.getmtime(file)
+            if time in file_dict:
+                file_dict[time].append(file)
+            else:
+                file_dict[time] = [file]
+
+        ordered = sorted(file_dict, reverse=True)
+
+        
+        r = []
+
+        for i, t in zip(range(n), ordered):
+            r += file_dict[t]
+
+        return r
 
                 
     def __getyesno():
