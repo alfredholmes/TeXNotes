@@ -12,12 +12,12 @@ To receive email updates about new features and general information about the pr
 ### Current Features
 
 * [Internote referencing commands](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Referencing-Files) - render Zettelkasten with PDFLaTeX or make4ht and get clickable hyperlinks in the PDFs and 
-* Biber support for citations (works well with, for example, Zotero auto export).
-* Helper scripts to create new notes from LaTeX templates
+* [Biber support](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Biber-Support) for citations (works well with, for example, Zotero auto export).
+* [Helper scripts](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Creating,-Deleting-and-Renaming-Notes) to create new notes from LaTeX templates
 * Automated analysis of the Zettelkasten - creates a database from the notes with details of the connections between notes.
 * Native python 'network view' of Zettelkasten ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Network-View)).
 * Ability to export multiple notes into a LaTeX document ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Export-Notes-as-Latex-Document)). 
-* PDF and HTML rendering
+* [PDF and HTML rendering](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Compiling-Notes)
 
 ### Planned Features
 
