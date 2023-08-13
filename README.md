@@ -11,7 +11,7 @@ To receive email updates about new features and general information about the pr
 
 ### Current Features
 
-* Internote referencing commands - render Zettelkasten with PDFLaTeX
+* [Internote referencing commands]((https://github.com/alfredholmes/LaTeX-Zettel/wiki/Referencing-Files) - render Zettelkasten with PDFLaTeX or make4ht and get clickable hyperlinks in the PDFs and 
 * Biber support for citations (works well with, for example, Zotero auto export).
 * Helper scripts to create new notes from LaTeX templates
 * Automated analysis of the Zettelkasten - creates a database from the notes with details of the connections between notes.
