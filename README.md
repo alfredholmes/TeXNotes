@@ -3,7 +3,7 @@ Zettelkasten or Slip box with notes written in LaTeX.
 
 ### Getting Started
 
-See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper function manage.py.
+See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper sript manage.py.
 
 ### Mailing List
 
