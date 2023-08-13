@@ -1,9 +1,13 @@
 # LaTeX-Zettel - Zettelkasten written with LaTeX.
 Zettelkasten or Slip box with notes written in LaTeX. 
 
+### Getting Started
+
+See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper function manage.py.
+
 ### Mailing List
 
-To receive email updates about new features and general information about the projecct, subscribe to the mailing list [here](https://www.freelists.org/list/latexzettel) or send an email with subject 'subscribe' to latexzettel-request@freelists.org.
+To receive email updates about new features and general information about the project, subscribe to the mailing list [here](https://www.freelists.org/list/latexzettel) or send an email with subject 'subscribe' to latexzettel-request@freelists.org.
 
 ### Current Features
 
@@ -13,14 +17,13 @@ To receive email updates about new features and general information about the pr
 * Automated analysis of the Zettelkasten - creates a database from the notes with details of the connections between notes.
 * Native python 'network view' of Zettelkasten ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Network-View)).
 * Ability to export multiple notes into a LaTeX document ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Export-Notes-as-Latex-Document)). 
+* PDF and HTML rendering
 
 ### Planned Features
 
 * Markdown support with Pandoc
 * Customizable templates, and different templates for different notes
 * Draw a path on the network view to write a draft of a paper
-* Export notes as a '.tex' file, rather than a LaTeX document that references other notes that can then be rendered
-* HTML rendering (this is currently implemented but has some bugs).
 * Import notes from an existing .tex file - split up already written documents into atomic notes by adding comments to the .tex file that describe the desired notes.
 
 

@@ -7,6 +7,16 @@ import subprocess
 
 
 from LatexZettel import analysis
+import platform
+
+#default open commmand for linux
+OPEN_COMMAND = 'xdg-open'
+
+#open command for windows
+if platform.system() == 'Darwin':
+    OPEN_COMMAND = 'open'
+elif platform.system() == 'Windows':
+    OPEN_COMMAND = 'start'
 
 
 class Node:
@@ -42,7 +52,11 @@ class App(tk.Tk):
         self.selected = None
 
         self.network = network
-        self.positions = nx.nx_agraph.graphviz_layout(self.network)
+        #self.positions = nx.nx_agraph.graphviz_layout(self.network)
+        print("calculating positions")
+        #self.positions = nx.spring_layout(self.network, k = 10, iterations=10000, seed=0)
+        self.positions = nx.graphviz_layout(self.network)
+        print("done")
 
 
 
@@ -189,7 +203,7 @@ class App(tk.Tk):
         try:
             node_id = clicked[0]
             filename = self.node_ids[node_id]
-            subprocess.call(['xdg-open', f'pdf/{filename}.pdf'])
+            subprocess.call([OPEN_COMMAND, f'pdf/{filename}.pdf'])
         except KeyError:
             pass
 

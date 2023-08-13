@@ -8,6 +8,16 @@ import os
 import peewee as pw
 import datetime
 
+
+import platform
+
+OPEN_COMMAND = 'xdg-open'
+
+if platform.system() == 'Darwin':
+    OPEN_COMMAND = 'open'
+elif platform.system() == 'Windows':
+    OPEN_COMMAND = 'start'
+
 class Helper:
     """
         Collection of functions for managing a LaTeX Zettelkasten. Each of these functions can be run from the command line by running
@@ -23,7 +33,7 @@ class Helper:
         These can be executed by hand (for now). The plan for the future is to get other applications (eg a text editor) to run these functions.
 
     """
-    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
+    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg', '-']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
@@ -73,7 +83,7 @@ class Helper:
         Helper.__createnotefile(note_name)
         Helper.addtodocuments(note_name, reference_name)
         #once created, add note to database 
-        note = database.Note(filename=note_name, reference=reference_name, created_at = datetime.datetime.now(), modified_date = datetime.datetime.now())
+        note = database.Note(filename=note_name, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
         note.save()
 
 
@@ -86,7 +96,7 @@ class Helper:
         recent_files = Helper.__get_recent_files(int(n))
 
         for i, f in enumerate(recent_files):
-            print(f'{i + 1}:\t', f.split('/')[2][:-4])
+            print(f'{i + 1}:\t', os.path.split(f)[-1][:-4])
 
 
 
@@ -96,9 +106,10 @@ class Helper:
             Rename the most recent nth file.
 
         """
+        Helper.synchronize()
         n = int(n)
 
-        file = Helper.__get_recent_files(int(n))[n-1].split('/')[2][:-4]
+        file = os.path.split(Helper.__get_recent_files(int(n))[n-1])[-1][:-4]
 
         db_file = database.Note.get(filename=file)
         
@@ -150,6 +161,7 @@ class Helper:
         """
 
         #function for regex replacement
+        Helper.synchronize()
         def replace_text(m):
             if m.group(1) is None and m.group(3) is None:
                 return f'\\\\excref{new_reference}'
@@ -254,11 +266,28 @@ class Helper:
         note = database.Note.get(filename=filename)
         linked_files = set()
 
+        external_documents = ""
+        references = set()
 
         for label in note.labels:
             for link in label.referenced_by:
+                source = link.source
+                references.add(source)
                 linked_files.add(link.source.reference)
-             
+
+
+
+
+        for link in note.references:
+            target_note = link.target.note
+            if link.target.note.last_build_date_html is not None:
+                references.add(target_note) 
+      
+        #inject external documents 
+        if format == 'html':
+            for reference in references:
+                if reference.last_build_date_html is not None:
+                    external_documents += f"\\externaldocument[{reference.reference}-]{{{reference.filename}}}\n"
        
         referenced_by_section = "\\section*{Referenced In}\n\\begin{itemize}\n"
         for reference in linked_files:
@@ -285,29 +314,34 @@ class Helper:
         with open(path_to_file, 'r') as f:
             contents = f.read()
 
-        
-        options.extend([f"--jobname={filename}"])
-
-
-
-    
-    
-
+        if format == 'pdf':
+            options.insert(0, f"--jobname={filename}")
+        elif format == 'html':
+            options = ['-j', filename] + options + ['"svg"']
+            
+ 
 
         document = contents.split('\\end{document}')[0]
 
         if len(linked_files) > 0:
             document += referenced_by_section
 
+        if format == 'html':
+            #replace include with preamble_html and inject external documents
+            document = document.replace("\\subimport{../template}{preamble.tex}", "\\subimport{../template}{preamble_html.tex}\n" + external_documents)
 
         document += "\\end{document}"
 
-        
 
         process = subprocess.run([command, *options], input=document.encode(), capture_output=True)
 
         os.chdir('../')
-        print(process.stdout, process.stderr)
+
+        if format == 'html':
+            note.last_build_date_html = datetime.datetime.now()
+        elif format == 'pdf':
+            note.last_build_date_pdf = datetime.now()
+        note.save()
         return process.stdout, process.stderr
 
         
@@ -338,22 +372,30 @@ class Helper:
         """
             Renderes all the notes using make4ht. Saves output in /html
         """
-
+        import subprocess
+        
         notes = Helper.__getnotefiles()
-        try:
-            os.mkdir('html')
-        except FileExistsError:
-            pass
-        os.chdir('html')
+        
 
+        print('render pass 1')
         for note in notes:
-            filename = note[:-4] 
-            os.system(f'make4ht -c ../config/make4ht.cfg ../{note} svg')
-            os.system(f'biber {filename}')
-
+            filename = os.path.split(note)[-1][:-4]
+            print(f'rendering {filename}...', end='')
+            output, error = Helper.render(filename, 'html') 
+            print('done')
+            print('running biber...', end='')
+            output, error = Helper.biber(filename, 'html')
+            print('done')
+        
+        print('render pass 2')
         for note in notes:
-            filename = note[:-4] 
-            os.system(f'make4ht -c ..config/make4ht.cfg ../{note} svg')
+            filename = os.path.split(note)[-1][:-4]
+            print(f'rendering {filename}...', end='')
+            output, error = Helper.render(filename, 'html')
+            if error == '':
+                print('done')
+            else:
+                print('\n',error)
        
        
     def render_all_pdf():
@@ -367,7 +409,7 @@ class Helper:
 
         print('render pass 1')
         for note in notes:
-            filename = ''.join(note[:-4].split('notes/slipbox/')[1:])
+            filename = os.path.split(note)[-1][:-4]
             print(f'rendering {filename}...', end='')
             output, error = Helper.render(filename) 
             if error == b'':
@@ -381,7 +423,7 @@ class Helper:
         
         print('render pass 2')
         for note in notes:
-            filename = ''.join(note[:-4].split('notes/slipbox/')[1:])
+            filename = os.path.split(note)[-1][:-4]
             print(f'rendering {filename}...', end='')
             output, error = Helper.render(filename)
             if error == '':
@@ -395,7 +437,7 @@ class Helper:
         """
         database.create_all_tables()
         notes = Helper.__getnotefiles()
-        notes = [''.join(note.split('notes/slipbox/')[1:])[:-4] for note in notes]
+        notes = [os.path.split(note)[-1][:-4] for note in notes]
         #get all the tracked notes (the ones in documents.tex)
         tracked_notes = {}
         with open('notes/documents.tex', 'r') as f:
@@ -417,12 +459,31 @@ class Helper:
 
         for filename, reference_name in tracked_notes.items():
             modified = datetime.datetime.fromtimestamp(os.path.getmtime(f'notes/slipbox/{filename}.tex'))
+            
 
             try:
                 note = database.Note.get(filename=filename)
                 note.last_edit_date = modified
+                if note.created is None:
+                    note.created = note.last_edit_date
+
+                try:
+                    html_render = datetime.datetime.fromtimestamp(os.path.getmtime(f'html/{filename}.html'))
+                    note.last_build_date_html = html_render
+                except FileNotFoundError as e:
+                    #print(f'{filename} is yet to be rendered as html')
+                    pass
+                
+                try:
+                    pdf_render = datetime.datetime.fromtimestamp(os.path.getmtime(f'pdf/{filename}.pdf'))
+                    note.last_build_date_pdf = pdf_render
+                except FileNotFoundError as e:
+                    print(f'{filename} is yet to be rendered as pdf')
+                
+
+
                 if note.reference == reference_name:
-                    continue #nothing to do
+                    pass #nothing to do
                 else:
                     #update note reference to the one in documents.tex, might want to check that this is the right thing to do
                     note.reference = reference_name
@@ -531,9 +592,9 @@ class Helper:
         import subprocess
         os.chdir('notes/slipbox')
         if filename is None:
-            subprocess.call(['xdg-open', f'{most_recent.split("/")[2]}'])
+            subprocess.call([OPEN_COMMAND, f'{most_recent.split("/")[2]}'])
         else:
-            subprocess.call(['xdg-open', f'{filename}.tex'])
+            subprocess.call([OPEN_COMMAND, f'{filename}.tex'])
 
 
     def to_md(note_name):
