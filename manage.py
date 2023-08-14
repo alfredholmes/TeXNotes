@@ -317,7 +317,8 @@ class Helper:
         if format == 'pdf':
             options.insert(0, f"--jobname={filename}")
         elif format == 'html':
-            options = ['-j', filename] + options + ['"svg"']
+            options = ['-j', filename] + options + ['"svg-"']
+            #options = ['-j', filename] + options
             
  
 
@@ -334,15 +335,20 @@ class Helper:
 
 
         process = subprocess.run([command, *options], input=document.encode(), capture_output=True)
-
         os.chdir('../')
+
+        if process.returncode != 0:
+            print('Failed to compile', process.stderr) #TODO: Exceptions
+            return process
+
 
         if format == 'html':
             note.last_build_date_html = datetime.datetime.now()
         elif format == 'pdf':
-            note.last_build_date_pdf = datetime.now()
+            note.last_build_date_pdf = datetime.datetime.now()
         note.save()
-        return process.stdout, process.stderr
+        
+        return process
 
         
 
@@ -381,7 +387,7 @@ class Helper:
         for note in notes:
             filename = os.path.split(note)[-1][:-4]
             print(f'rendering {filename}...', end='')
-            output, error = Helper.render(filename, 'html') 
+            process = Helper.render(filename, 'html') 
             print('done')
             print('running biber...', end='')
             output, error = Helper.biber(filename, 'html')
@@ -391,11 +397,11 @@ class Helper:
         for note in notes:
             filename = os.path.split(note)[-1][:-4]
             print(f'rendering {filename}...', end='')
-            output, error = Helper.render(filename, 'html')
-            if error == '':
+            process = Helper.render(filename, 'html')
+            if process.returncode == 0:
                 print('done')
             else:
-                print('\n',error)
+                print('\n',process.stderr)
        
        
     def render_all_pdf():
