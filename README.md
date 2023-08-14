@@ -3,7 +3,7 @@ Zettelkasten or Slip box with notes written in LaTeX.
 
 ### Getting Started
 
-See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper function manage.py.
+See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper sript manage.py.
 
 ### Mailing List
 
@@ -11,13 +11,13 @@ To receive email updates about new features and general information about the pr
 
 ### Current Features
 
-* Internote referencing commands - render Zettelkasten with PDFLaTeX
-* Biber support for citations (works well with, for example, Zotero auto export).
-* Helper scripts to create new notes from LaTeX templates
+* [Internote referencing commands](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Referencing-Files) - render Zettelkasten with PDFLaTeX or make4ht and get clickable hyperlinks in the PDFs and html pages.
+* [Biber support](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Biber-Support) for citations (works well with, for example, Zotero auto export).
+* [Helper scripts](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Creating,-Deleting-and-Renaming-Notes) to create new notes from LaTeX templates
 * Automated analysis of the Zettelkasten - creates a database from the notes with details of the connections between notes.
 * Native python 'network view' of Zettelkasten ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Network-View)).
 * Ability to export multiple notes into a LaTeX document ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Export-Notes-as-Latex-Document)). 
-* PDF and HTML rendering
+* [PDF and HTML rendering](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Compiling-Notes)
 
 ### Planned Features
 
