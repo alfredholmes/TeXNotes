@@ -1,7 +1,7 @@
 import peewee as pw
 
 
-database = pw.SqliteDatabase('slipbox.db')
+database = pw.SqliteDatabase('slipbox.db', pragmas={'foreign_keys': 1})
 
 class BaseModel(pw.Model):
     class Meta:
