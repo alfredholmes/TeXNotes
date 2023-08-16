@@ -164,13 +164,13 @@ class Helper:
         Helper.synchronize()
         def replace_text(m):
             if m.group(1) is None and m.group(3) is None:
-                return f'\\\\excref{new_reference}'
+                return f'\\excref{new_reference}'
             elif m.group(1) is None and m.group(3) is not None:
-                return f'\\\\excref[{m.group(4)}]{{{new_reference}}}'
+                return f'\\excref[{m.group(4)}]{{{new_reference}}}'
             elif m.group(1) is not None and m.group(3) is None:
-                return f'\\\\exhyperref{new_reference}'
+                return f'\\exhyperref{new_reference}'
             elif m.group(1) is not None:
-                return f'\\\\exhyperref[{m.group(4)}]{{{new_reference}}}'
+                return f'\\exhyperref[{m.group(4)}]{{{new_reference}}}'
 
 
         # Update documents.tex
