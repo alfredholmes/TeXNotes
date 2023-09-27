@@ -2,7 +2,7 @@
 import sys
 
 import shutil
-from LatexZettel import files, database, analysis
+from LatexZettel import files, database 
 import re
 import os
 import peewee as pw
@@ -33,7 +33,7 @@ class Helper:
         These can be executed by hand (for now). The plan for the future is to get other applications (eg a text editor) to run these functions.
 
     """
-    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', '../config/make4ht.cfg', '-']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
+    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', os.path.join('..', 'config', 'make4ht.cfg'), '-']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
@@ -274,9 +274,6 @@ class Helper:
                 source = link.source
                 references.add(source)
                 linked_files.add(link.source.reference)
-
-
-
 
         for link in note.references:
             target_note = link.target.note
@@ -573,6 +570,7 @@ class Helper:
 
                         
     def list_unreferenced():
+        from LatexZettel import analysis
         """
             Prints a list of notes that are not referenced in any other note. These might want to be added to the index, for example. 
         """
@@ -594,12 +592,13 @@ class Helper:
 
         """
 
-        most_recent = Helper.__get_recent_files(1)[0]
         import subprocess
-        os.chdir('notes/slipbox')
         if filename is None:
-            subprocess.call([OPEN_COMMAND, f'{most_recent.split("/")[2]}'])
+            most_recent = Helper.__get_recent_files(1)[0]
+            os.chdir(os.path.join('notes','slipbox'))
+            subprocess.call([OPEN_COMMAND, os.path.split(most_recent)[1]])
         else:
+            os.chdir(os.path.join('notes','slipbox'))
             subprocess.call([OPEN_COMMAND, f'{filename}.tex'])
 
 
@@ -780,7 +779,6 @@ class Helper:
     def __get_recent_files(n = -1):
         files = Helper.__getnotefiles()
 
-        print(len(files))
 
         if int(n) <= 0:
             n = len(files)
