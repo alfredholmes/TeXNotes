@@ -70,6 +70,8 @@ also defined in `/template/preamble.tex`. This creates a hyperlink to the item l
 
 See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation.
 
+### Donations / Support
 
+Please report any bugs or feature requests to the repository [issues](https://github.com/alfredholmes/LaTeX-Zettel/issues). If you find the project useful, please consider buying me a [coffee](https://ko-fi.com/holmes).
 
 
