@@ -248,12 +248,17 @@ class Helper:
 
     
 
-    def render(filename, format='pdf'):
+    def render(filename, format='pdf', biber=False):
         """
 
             Render the LaTeX file. By default renders as a pdf and output is stored in the folder /pdf. The other format option is html, although support is currently experimental.
 
         """
+
+        if biber:
+            Helper.render(filename, format, False)
+            Helper.biber(filename)
+
         import subprocess
         command, options = Helper.renderers[format]
         
@@ -434,9 +439,65 @@ class Helper:
             else:
                 print('\n',error)
 
+
+    def render_updates(format='pdf'):
+        updated, new_links, run_biber = Helper.synchronize()
+        
+        #render the updated files
+        for note in updated:
+            print(f'Rendering {note.filename}')
+            Helper.render(note.filename, format, run_biber[note])
+
+        for link in new_links:
+            print(f'Rendering {link.target.note.filename}')
+            Helper.render(link.target.note.filename, format)
+                
+
+
+
     def synchronize():
         """
-            Reads the file documents.tex and adds these files to the database (/slipbox.db), then checks for files in /notes that aren't in the documents
+            Reads all the files that have been changed since the last call of this function and updates the database
+        """
+
+
+        #loop through all the tracked notes and check for required updates
+        to_read = []
+        for note in database.Note:
+            #try and get the edit date from the file system. 
+            try:
+                file = os.path.join('notes', 'slipbox', f'{note.filename}.tex')
+                modified = os.path.getmtime(file)
+
+                if datetime.datetime.fromtimestamp(modified) > note.last_edit_date:
+                    to_read.append(note)
+                    note.last_edit_date = datetime.datetime.fromtimestamp(modified)
+                    note.save()
+
+            except FileNotFoundError:
+                #Todo: file has been deleted or renamed without the database being updated really need to run force_synchronize.
+                print('file not found for note with reference {note.reference}')
+                pass
+
+        #update labels 
+        run_biber = {}
+        for note in to_read:
+            Helper.__update_labels(note)
+            run_biber[note] = Helper.__update_citations(note)
+
+
+        new_links = []
+        for note in to_read:
+            new_links.extend(Helper.__update_links(note))
+
+
+        return to_read, new_links, run_biber
+
+
+
+    def force_synchronize():
+        """
+            Reads the file documents.tex and adds these files to the database (/slipbox.db) and checks for files in /notes that aren't in the documents. Then fixes and confilcts with these before reading the notes and creating database objects for labels, links and citations. 
         """
         database.create_all_tables()
         notes = Helper.__getnotefiles()
@@ -461,7 +522,8 @@ class Helper:
                         tracked_notes[filename] = reference_name
 
         for filename, reference_name in tracked_notes.items():
-            modified = datetime.datetime.fromtimestamp(os.path.getmtime(f'notes/slipbox/{filename}.tex'))
+            filepath = os.path.join('notes', 'slipbox', f'{filename}.tex')
+            modified = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
             
 
             try:
@@ -523,47 +585,13 @@ class Helper:
         
         #add labels
         for note in database.Note:
-            try:
-                labels = Helper.__getlabels(note)
-            except FileNotFoundError:
-                #todo: handle this error, note does not exist
-                pass
-            tracked_labels = [label.label for label in note.labels]
-            for label in labels:
-                if label not in tracked_labels:
-                    database.Label.create(label=label, note=note)
-                    print(f'created label {label}')
-
-            #remove extra labels
-            for label in note.labels:
-                if label.label not in labels:
-                    label.delete_instance()
+            Helper.__update_labels(note)
+            Helper.__update_citations(note)
                    
         #add connections
 
         for note in database.Note: 
-            try:
-                links = Helper.__getlinks(note)
-            except FileNotFoundError:
-                #todo: handle error
-                pass
-
-            tracked = [(link.target.note.reference, link.target.label) for link in note.references] 
-            #add in untracked
-            for link in links:
-                if link not in tracked:
-                    try:
-                        label = database.Label.get(note__reference=link[0], label=link[1])
-                        link = database.Link.create(target=label, source=note)
-                        print(f'created link, {note.filename}, {label.note.filename}, {label}')
-                    except database.Label.DoesNotExist:
-                        print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
-
-            #remove any that no longer exist
-            for link in note.references:
-                if (link.target.note.reference, link.target.label) not in links:
-                    print(f'link {(link.target.note.reference, link.target.label)} no longer exists, deleting')
-                    link.delete_instance()
+            Helper.__update_links(note)
 
 
             
@@ -687,7 +715,67 @@ class Helper:
             f.write(output)
 
 
+    def __update_citations(note):
+        keys = Helper.__getcitations(note)
+        tracked = [c for c in note.citations]
+        
+        updates_to_citations = False
 
+        for key in keys:
+            if key in tracked:
+                continue
+            database.Citation.create(note=note, citationkey=key)
+            updates_to_citations = True
+            
+
+        for citation in tracked:
+            if citation.citationkey not in keys:
+                citation.delete_instance()
+                updates_to_citations = True
+
+        return updates_to_citations
+                
+
+
+    def __update_labels(note):
+        labels = Helper.__getlabels(note)
+        tracked_labels = [label.label for label in note.labels]
+        for label in labels:
+            if label not in tracked_labels:
+                database.Label.create(label=label, note=note)
+
+            #remove extra labels
+        for label in note.labels:
+            if label.label not in labels:
+                label.delete_instance()
+                   
+        #add connections
+
+    def __update_links(note):
+
+        links = Helper.__getlinks(note)
+        modified = []
+
+        tracked = [(link.target.note.reference, link.target.label) for link in note.references] 
+            #add in untracked
+        for link in links:
+            if link not in tracked:
+                try:
+                    label = database.Label.get(note__reference=link[0], label=link[1])
+                    link = database.Link.create(target=label, source=note)
+                    modified.append(link)
+                except database.Label.DoesNotExist:
+                        print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
+
+        #remove any that no longer exist
+        for link in note.references:
+            if (link.target.note.reference, link.target.label) not in links:
+                print(f'link {(link.target.note.reference, link.target.label)} no longer exists, deleting')
+                link.delete_instance()
+                modified.append(link)
+
+
+        return modified 
 
 
     def __getnotefiles(directory='notes/slipbox'):
@@ -743,12 +831,29 @@ class Helper:
         return file_labels
 
 
+    def list_citations(filename):
+        Helper.__getcitations(database.Note.get(filename=filename))
 
+    def __getcitations(note):
+        citation_commands = ['cite', 'parencite', 'footcite', 'footcitetext', 'textcite', 'smartcite', 'cite*', 'parencite*', 'supercite', 'autocite', 'autocite*', 'citeauthor', 'citeauthor*', 'citetitle', 'citeyear', 'citedate', 'citeurl', 'volcite', 'pvolcite', 'fvolcite', 'ftvolcite', 'svolcite', 'tvolcite', 'avolcite', 'fillcite', 'footfullcite', 'nocite', 'notecite', 'pnotecite', 'fnotecite']
+
+
+        file_path = os.path.join('notes', 'slipbox', f'{note.filename}.tex')
+        keys = set()
+        with open(file_path, 'r') as f:
+            for line in f:
+                citations = re.finditer('\\\\(' + '|'.join(citation_commands) + ')(\[([^]]+)\])?(\{[^\}]+\})?(\[([^]]+)\])?\{([^\}]+)\}', line)
+                for match in citations:
+                    key = match.group(7)
+                    keys.add(key)
+
+
+        return keys
 
     def __getlinks(note):
         notes = Helper.__getnotefiles()
         file_references = []
-        with open(f'notes/slipbox/{note.filename}.tex') as f:
+        with open(f'notes/slipbox/{note.filename}.tex', 'r') as f:
             for line in f:
                 links = re.finditer('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
                 for link in links:
