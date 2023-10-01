@@ -33,7 +33,7 @@ class Helper:
         These can be executed by hand (for now). The plan for the future is to get other applications (eg a text editor) to run these functions.
 
     """
-    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-c', os.path.join('..', 'config', 'make4ht.cfg'), '-']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
+    renderers = {'pdf': ['pdflatex', ['--interaction=scrollmode']], 'html': ['make4ht', ['-um', 'draft', '-c', os.path.join('..', 'config', 'make4ht.cfg'), '-']]} # {'format': ['command_line_command', ['list', 'of', 'commandline', 'options']]}
 
     def help():
         print("""
@@ -86,6 +86,23 @@ class Helper:
         note = database.Note(filename=note_name, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
         note.save()
 
+    def newproject(dir_name, filename=None):
+        """
+            Creates a project folder (for exporting notes) and copies the project.tex file into the folder
+        """
+
+        try:
+            dirpath = os.path.join('projects', dir_name)
+            os.mkdir(dirpath)
+        except FileExistsError:
+            raise Exception('Error: project directory already exists')
+
+        if filename is None: 
+            filename = f'{dir_name}.tex'
+
+        template = os.path.join('template', 'project.tex')
+        tex_file = os.path.join(dirpath, filename)
+        shutil.copyfile(template, tex_file)
 
 
     def list_recent_files(n = 10):
@@ -442,15 +459,39 @@ class Helper:
 
     def render_updates(format='pdf'):
         updated, new_links, run_biber = Helper.synchronize()
+
+        
+        for note in database.Note:
+            if note in updated:
+                continue
+            if format == 'pdf':
+                if note.last_build_date_pdf is None or note.last_edit_date > note.last_build_date_pdf:
+                    updated.append(note)
+                    run_biber[note] = True
+                    #fix reference in
+                    new_links.extend([r for r in note.references])
+            elif format == 'html':
+                if note.last_build_date_html is None or note.last_edit_date > note.last_build_date_html:
+                    updated.append(note)
+                    run_biber[note] = True
+                    #fix referenced in
+                    new_links.extend([r for r in note.references])
+
         
         #render the updated files
         for note in updated:
             print(f'Rendering {note.filename}')
             Helper.render(note.filename, format, run_biber[note])
 
+
+        rerendered = []
+
         for link in new_links:
+            if link.target.note in rerendered:
+                continue
             print(f'Rendering {link.target.note.filename}')
             Helper.render(link.target.note.filename, format)
+            rerendered.append(link.target.note)
                 
 
 

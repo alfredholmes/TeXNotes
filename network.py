@@ -33,7 +33,7 @@ class App(tk.Tk):
     def __init__(self, network):
         super().__init__()
         self.title('LaTeX Zettel Network')
-        self.canvas = tk.Canvas(self, width=1000, height=700, bg='white', bd=0, highlightthickness=0)
+        self.canvas = tk.Canvas(self, width=1080, height=1920, bg='white', bd=0, highlightthickness=0)
         self.canvas.pack(expand=True)
         self.update()
         

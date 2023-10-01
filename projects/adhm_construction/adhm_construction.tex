@@ -17,7 +17,7 @@
 
 
 \usepackage[style=alphabetic]{biblatex}
-\addbibresource{../bibliography.bib}
+\addbibresource{../../bibliography.bib}
 
 
 \hypersetup{
@@ -62,10 +62,12 @@
     \section{Example Export}
 
     %Import all of a note
-    \transclude{example_note}
+    %\ExecuteMetaData[../notes/slipbox/example_note.tex]{note}
     %The note argument of ExecuteMetaData corresponds to the <*note>, </note> tags in the note template. 
     %To import only part of a note then you can surround that part by a different tag, say <*part>...</part> and then call
-    \transclude[part]{example_note}
+    %\ExecuteMetaData[../notes/slipbox/example_note.tex]{part}
+
+    \transclude{adhm_data}
 
 
 
