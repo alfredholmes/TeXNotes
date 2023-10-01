@@ -92,6 +92,12 @@ class Helper:
         """
 
         try:
+            os.mkdir('projects')
+        except FileExistsError:
+            pass
+
+
+        try:
             dirpath = os.path.join('projects', dir_name)
             os.mkdir(dirpath)
         except FileExistsError:
@@ -724,6 +730,46 @@ class Helper:
 
         print(p.stdout, p.stderr)
 
+
+    def export_project(project_folder, texfile=None):
+        if texfile is None:
+            texfile = f'{project_folder}.tex'
+
+        output_dir = os.path.join('projects', project_folder, 'standalone')
+
+        try:
+            os.mkdir(output_dir)
+        except FileExistsError:
+            print('Export already exists, continue? (Warning: This will overwrite any changes you have made to the file {texfile} in {output_dir})')
+            if not Helper.__getyesno():
+                return
+
+
+
+        output = bytearray()
+        input_file = os.path.join('projects', project_folder, texfile)
+        
+        with open(input_file, 'r') as f:
+            for line in f:
+
+                output.extend((re.sub('\\\\transclude(\[[^]]+\]+)?\{([^}]+)\}', '', line).strip() + '\n').encode())
+                external_documents = re.finditer('\\\\transclude(\[([^]]+)\])?\{([^}]+)\}', line)
+                for document in external_documents:
+                    tag = document.group(2)
+                    document = document.group(3)
+                    if tag is None:
+                        tag = 'note'
+
+                    note_file = os.path.join('notes', 'slipbox', f'{document}.tex')
+                    with open(note_file, 'r') as in_file:
+                        full_document = in_file.read() 
+                        import_text = re.search(f'%<\*{tag}>((.|\n)*?)%</{tag}>', full_document)
+                        output.extend(import_text.group(1).strip().encode())
+
+        out_file = os.path.join(output_dir, texfile)
+
+        with open(out_file, 'wb') as f:
+            f.write(output)
 
     def export_draft(input_file, output_file=None):
         """
