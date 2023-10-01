@@ -732,6 +732,12 @@ class Helper:
 
 
     def export_project(project_folder, texfile=None):
+        """
+
+            Replaces \\transclude calls in a project file with the contents of the notes. Output is saved in project_dir/standalone
+
+        """
+
         if texfile is None:
             texfile = f'{project_folder}.tex'
 
