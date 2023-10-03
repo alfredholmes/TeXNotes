@@ -284,6 +284,7 @@ class Helper:
 
         import subprocess
         command, options = Helper.renderers[format]
+        options = list(options)
         
         try:
             os.mkdir(format)
@@ -357,7 +358,6 @@ class Helper:
             document = document.replace("\\subimport{../template}{preamble.tex}", "\\subimport{../template}{preamble_html.tex}\n" + external_documents)
 
         document += "\\end{document}"
-
 
         process = subprocess.run([command, *options], input=document.encode(), capture_output=True)
         os.chdir('../')
