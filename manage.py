@@ -466,6 +466,7 @@ class Helper:
     def render_updates(format='pdf'):
         updated, new_links, run_biber = Helper.synchronize()
 
+
         
         for note in database.Note:
             if note in updated:
@@ -807,15 +808,36 @@ class Helper:
         with open(output_file, 'wb') as f:
             f.write(output)
 
+    def remove_duplicate_citations():
+        for note in database.Note:
+            tracked = [c for c in note.citations]
+            tracked_keys = [c.citationkey for c in tracked]
+
+            tracked_set = set(tracked_keys)
+
+            if len(tracked_set) < len(tracked_keys):
+                print(f'deleting duplicate keys in {note.filename}')
+                for key in tracked_set:
+                    citation_instances =  [c for c in database.Citation.select().where(database.Citation.note == note, database.Citation.citationkey==key)]
+
+                    for i, c in enumerate(citation_instances):
+                        if i == 0:
+                            continue
+
+                        c.delete_instance()
+
 
     def __update_citations(note):
         keys = Helper.__getcitations(note)
         tracked = [c for c in note.citations]
+        tracked_keys = [c.citationkey for c in tracked]
+
+                
         
         updates_to_citations = False
 
         for key in keys:
-            if key in tracked:
+            if key in tracked_keys:
                 continue
             database.Citation.create(note=note, citationkey=key)
             updates_to_citations = True
