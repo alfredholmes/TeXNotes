@@ -1,4 +1,3 @@
 peewee
 numpy
-networkx
-pygraphviz
+watchdog
