@@ -1,4 +1,4 @@
-# LaTeX-Zettel - Zettelkasten written with LaTeX.
+# TeXNotes - Zettelkasten written with LaTeX.
 Zettelkasten or Slip box with notes written in LaTeX. 
 
 ![Screenshot from 2023-10-09 19-34-59](https://github.com/alfredholmes/LaTeX-Zettel/assets/10376110/661103ed-2a1e-45db-bcc5-faf805133d7d)
