@@ -1,6 +1,8 @@
 # LaTeX-Zettel - Zettelkasten written with LaTeX.
 Zettelkasten or Slip box with notes written in LaTeX. 
 
+![Screenshot from 2023-10-09 19-34-59](https://github.com/alfredholmes/LaTeX-Zettel/assets/10376110/661103ed-2a1e-45db-bcc5-faf805133d7d)
+
 ### Getting Started
 
 See [wiki/getting started](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Getting-Started) for instructions. See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfredholmes/LaTeX-Zettel/blob/main/docs/manage.html) for documentation on the helper sript manage.py.
