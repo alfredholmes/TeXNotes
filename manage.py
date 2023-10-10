@@ -52,9 +52,12 @@ class Helper:
 
                 
 
+    def newnote_md(note_name, reference_name=""):
+        Helper.newnote(note_name, reference_name, extension='md')
+
     
 
-    def newnote(note_name, reference_name=""):
+    def newnote(note_name, reference_name="", **kwargs):
         """
             Makes a new note with name note_name [Optional ReferenceName]
             Creates note with name note_name.tex, Second argument is optional and is the name in the reference, defaults to NoteName
@@ -79,8 +82,11 @@ class Helper:
                 return
             except database.Note.DoesNotExist:
                 pass 
-    
-        Helper.__createnotefile(note_name)
+        try: 
+            ext = kwargs['extension']
+        except KeyError:
+            ext = 'tex'
+        Helper.__createnotefile(note_name, kwargs['extension'])
         Helper.addtodocuments(note_name, reference_name)
         #once created, add note to database 
         note = database.Note(filename=note_name, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
@@ -109,6 +115,9 @@ class Helper:
         template = os.path.join('template', 'project.tex')
         tex_file = os.path.join(dirpath, filename)
         shutil.copyfile(template, tex_file)
+
+
+    
 
 
     def list_recent_files(n = 10):
@@ -897,36 +906,45 @@ class Helper:
         notes = [str(f) for f in files.get_files(directory, '.tex')]
         return notes
 
-    def __createnotefile(filename):
+    def __createnotefile(filename, extension = 'tex'):
         try:
             os.mkdir('notes')
         except FileExistsError:
             pass
 
+        if extension == 'tex':
+            folder = os.path.join('notes', 'slipbox')
+        else:
+            folder = os.path.join('notes', extension)
+
+
         try:
-            os.mkdir('notes/slipbox')
+            os.mkdir(folder)
         except FileExistsError:
             pass
 
 
         try:
-            with open(f'notes/slipbox/{filename}.tex', 'r') as f:
+            with open(os.path.join(folder, f'{filename}.{extension}'), 'r') as f:
                 pass
-            print(f'File notes/{filename}.tex already exists, skipping copying the template')
+            print(f'File {folder}/{filename}.{extension} already exists, skipping copying the template')
             return
         except FileNotFoundError:
             pass
 
-        
-        shutil.copyfile('template/note.tex', f'notes/slipbox/{filename}.tex')
+         
         file = bytearray()
         title = ' '.join([s.capitalize() for s in filename.split('_')])
 
-        with open('template/note.tex', 'r') as f:
-            for line in f:
-                file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
+        with open(os.path.join('template', f'note.{extension}'), 'r') as f:
+            for i, line in enumerate(f):
+                if extension == 'tex':
+                    file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
+                elif extension == 'md':
+                    file.extend((re.sub('Note Title', title, line)).encode())
 
-        with open(f'notes/slipbox/{filename}.tex', 'wb') as f:
+
+        with open(os.path.join(folder, f'{filename}.{extension}'), 'wb') as f:
             f.write(file)
 
 
