@@ -20,10 +20,10 @@ To receive email updates about new features and general information about the pr
 * Native python 'network view' of Zettelkasten ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Network-View)).
 * Ability to export multiple notes into a LaTeX document ([see here](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Export-Notes-as-Latex-Document)). 
 * [PDF and HTML rendering](https://github.com/alfredholmes/LaTeX-Zettel/wiki/Compiling-Notes)
+* [Markdown support with Pandoc](https://github.com/alfredholmes/TeXNotes/wiki/Markdown-Support-with-Pandoc)
 
 ### Planned Features
 
-* Markdown support with Pandoc
 * Customizable templates, and different templates for different notes
 * Draw a path on the network view to write a draft of a paper
 * Import notes from an existing .tex file - split up already written documents into atomic notes by adding comments to the .tex file that describe the desired notes.
