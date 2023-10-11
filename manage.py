@@ -86,7 +86,7 @@ class Helper:
             ext = kwargs['extension']
         except KeyError:
             ext = 'tex'
-        Helper.__createnotefile(note_name, kwargs['extension'])
+        Helper.__createnotefile(note_name, ext)
         Helper.addtodocuments(note_name, reference_name)
         #once created, add note to database 
         note = database.Note(filename=note_name, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())

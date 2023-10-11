@@ -1,0 +1,7 @@
+title: untitled note
+theorem-environments:
+  theorem: thm
+  definition: definition
+  example: example
+  remark: rmk
+  conjecture: conj

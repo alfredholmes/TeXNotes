@@ -1,5 +1,5 @@
 local List = require 'pandoc.List'
-local theorem_environments = {}
+local theorem_environments
 
 function to_str(el)
     return el[1].text
@@ -8,12 +8,13 @@ end
 local title_header 
 function Meta(meta)
     if meta["theorem-environments"] then
-        theorem_environments = List:new(meta["theorem-environments"])
-        theorem_environments = theorem_environments:map(to_str)
+        theorem_environments = meta["theorem-environments"]:map(to_str)
     end
     if title_header ~= nil and title_header ~= "" then
         meta.title = title_header
     end
+    print('meta')
+    theorem_environments = {'theorem'}
     return meta
 end
 
@@ -39,12 +40,12 @@ local counter = 0
 local header_label = ""
 local label, environment
 function transform(block)
-    print(block)
+    print('transform')
     if block.tag == 'Header' then
         if title_header == nil and block.level == 1 then
             title_header = header_string(block)
             return {}
-        else
+        elseif title_header == nil then
             title_header = ""
         end
 
@@ -52,17 +53,17 @@ function transform(block)
         local str = header_string(block)
 
 
+
         for i, env in ipairs(theorem_environments) do 
             local env = env:sub(1, 1):upper() .. env:sub(2):lower()
             ev, label = str:match("^(" .. env .. ")%s?%(?(.-)%)?$")
-            if ev ~= nil then
+            if ev ~= "" then
                 environment = env
                 break
             end
         end
     end
     
-
 
     if not in_theorem then
         if block.tag == "Header" and block.level == 3 and environment ~= nil then
@@ -155,6 +156,6 @@ end
 return {
     {Math = Math},
     {Para = Para},
+    {Meta = Meta},
     {Pandoc = Pandoc},
-    {Meta = Meta}
 }
