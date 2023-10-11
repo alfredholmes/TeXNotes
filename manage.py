@@ -329,7 +329,7 @@ class Helper:
                 import subprocess 
                 command = 'pandoc' 
                 options = ['-o', os.path.join('notes', 'slipbox', f'{filename}.tex')]
-                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata=defaults.yaml']
+                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata-file=defaults.yaml']
                 process = subprocess.run([command, *options], input=text.encode(), capture_output=True)
 
                 if process.returncode != 0:
