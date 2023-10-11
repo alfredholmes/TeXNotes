@@ -13,7 +13,6 @@ function Meta(meta)
     if title_header ~= nil and title_header ~= "" then
         meta.title = title_header
     end
-    print('meta')
     theorem_environments = {'theorem'}
     return meta
 end
@@ -40,7 +39,6 @@ local counter = 0
 local header_label = ""
 local label, environment
 function transform(block)
-    print('transform')
     if block.tag == 'Header' then
         if title_header == nil and block.level == 1 then
             title_header = header_string(block)
@@ -106,6 +104,7 @@ end
 
 function Pandoc(doc)
     doc.blocks = doc.blocks:walk({Block = transform})
+    doc.meta.title = title_header 
     return doc
 end
 
@@ -149,6 +148,8 @@ end
 function Math(math)
     if math.mathtype == "DisplayMath" then
         return pandoc.RawInline("latex", "\n\\begin{equation*}" .. math.text .. "\\end{equation*}\n")
+    elseif math.mathtype == "InlineMath" then
+        return pandoc.RawInline("latex", "$" .. math.text .. "$")
     end
 end
 

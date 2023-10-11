@@ -16,3 +16,4 @@ def get_rendered_dates(extension='pdf', files=None):
     print(dates)
     
 
+

@@ -45,17 +45,20 @@ class Helper:
             Adds line \externaldocument[reference-]{filename} to documents.tex
             If reference is not supplied then it defaults to, for example, NoteName if filename=note_name
         """
-            
+
 
         with open('notes/documents.tex', 'a') as f:
             f.write(f'\externaldocument[{reference}-]{{{filename}}}\n')
 
-                
+
 
     def newnote_md(note_name, reference_name=""):
+        """
+            Creates a new markdown note with the given title. Otherwise, same functionality as Helper.newnote()
+        """
         Helper.newnote(note_name, reference_name, extension='md')
 
-    
+
 
     def newnote(note_name, reference_name="", **kwargs):
         """
@@ -67,7 +70,7 @@ class Helper:
         """
         if reference_name == "":
             reference_name = ''.join([w.capitalize() for w in note_name.split('_')])
-        
+
         #see if the note already exists
         try:
             note = database.Note.get(filename=note_name)
@@ -82,6 +85,7 @@ class Helper:
                 return
             except database.Note.DoesNotExist:
                 pass 
+        
         try: 
             ext = kwargs['extension']
         except KeyError:
@@ -117,7 +121,7 @@ class Helper:
         shutil.copyfile(template, tex_file)
 
 
-    
+
 
 
     def list_recent_files(n = 10):
@@ -132,7 +136,6 @@ class Helper:
 
 
 
-
     def rename_recent(n = 1):
         """
             Rename the most recent nth file.
@@ -144,7 +147,7 @@ class Helper:
         file = os.path.split(Helper.__get_recent_files(int(n))[n-1])[-1][:-4]
 
         db_file = database.Note.get(filename=file)
-        
+
         new_name = input(f"Change file name to [{file}]: ") or db_file.filename
         new_reference = input(f"Change reference to [{db_file.reference}]: ") or db_file.reference
 
@@ -185,7 +188,7 @@ class Helper:
 
         with open('notes/documents.tex', 'wb') as f:
             f.write(lines)
-        
+
 
     def rename_reference(old_reference, new_reference):
         """
@@ -214,7 +217,7 @@ class Helper:
         with open('notes/documents.tex', 'r') as f:
             for line in f:
                 lines.extend(re.sub('\\\\externaldocument\[' + note.reference + '\-\]\{' + note.filename + '\}', '\\\\externaldocument[' + new_reference + '-]{' + note.filename + '}', line).encode())
-        
+
         with open('notes/documents.tex', 'wb') as f:
             f.write(lines)
 
@@ -231,10 +234,12 @@ class Helper:
 
                 with open(f'notes/slipbox/{backref.source.filename}.tex', 'wb') as f:
                     f.write(lines)
-        
+
         #update note db
         note.reference = new_reference
         note.save()
+
+
 
 
     def remove_note(filename):
@@ -254,18 +259,18 @@ class Helper:
 
         with open('notes/documents.tex', 'r') as f:
             lines = f.readlines()
-        
+
         to_delete= []
         for i, line in enumerate(lines):
             m = re.search(f'(\\\\externaldocument\[)(.+?)(\-\]\{{){filename}(\}})', line)
             if m:
                 to_delete.append(i)
-           
+
         for i in reversed(to_delete):
             print(f'delete line {lines[i].strip()} from notes/documents.tex? (y/n)')
             if Helper.__getyesno():
                 lines.pop(i)
-        
+
         with open('notes/documents.tex', 'w') as f:
             for line in lines:
                 f.write(line)
@@ -278,7 +283,57 @@ class Helper:
             except FileNotFoundError:
                 print('Error, no such file exists')
 
-    
+
+    def sync_md():
+        markdown_files = files.get_files(os.path.join('notes', 'md'), 'md')
+        print('Warning: this may overwrite any files in notes/slipbox that share their filename with a file in notes/md. Do you wish to continue?')
+        if not Helper.__getyesno():
+            return
+        tracked_note_files = [note.filename for note in database.Note]
+        print(tracked_note_files)
+        for file in markdown_files:
+            filename = os.path.basename(file)[:-3]
+            if filename not in tracked_note_files:
+                reference_name = filename.split('-')
+                reference_name = ''.join([w.capitalize() for w in filename.split('_')])
+                note = database.Note(filename=filename, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
+                note.save()
+                Helper.addtodocuments(filename, reference_name)
+        
+        for file in markdown_files:
+            filename = os.path.basename(file)[:-3]
+            try: 
+                edit_delta = os.path.getmtime(file) - os.path.getmtime(os.path.join('notes', 'slipbox', f'{filename}.tex'))
+            except FileNotFoundError:
+                edit_delta = 1
+
+            #if edit_delta > 0:
+            if edit_delta > 0: 
+                #change all the links in the document
+                with open(file, 'r') as f:
+                    file_contents = f.read()
+                regex = "\[\[([A-Za-z0-9\-\_]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\excref{{{database.Note.get(filename=m.group(1)).reference}}}", file_contents)
+
+                regex = "\[\[([A-Za-z0-9\-\_]+)\#\^?([A-Za-z0-9\-\_]+)\]\]"
+
+                text = re.sub(regex, lambda m: f"\\excref[{m.group(2)}]{{{database.Note.get(filename=m.group(1)).reference}}}", text)
+
+
+                regex = "\[\[([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\exhyperref{{{database.Note.get(filename=m.group(1)).reference}}}{{{m.group(2)}}}", text)
+
+                regex = "\[\[([A-Za-z0-9\-\_]+)\#\^?([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\exhyperref[{m.group(2)}]{{{database.Note.get(filename=m.group(1)).reference}}}{{{m.group(3)}}}", text)
+
+                import subprocess 
+                command = 'pandoc' 
+                options = ['-o', os.path.join('notes', 'slipbox', f'{filename}.tex')]
+                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex']
+                process = subprocess.run([command, *options], input=text.encode(), capture_output=True)
+
+                if process.returncode != 0:
+                    print('pandoc error:', process.stderr)
 
     def render(filename, format='pdf', biber=False):
         """
@@ -294,13 +349,13 @@ class Helper:
         import subprocess
         command, options = Helper.renderers[format]
         options = list(options)
-        
+
         try:
             os.mkdir(format)
         except FileExistsError:
             pass
 
-        
+
         note = database.Note.get(filename=filename)
         linked_files = set()
 
@@ -317,20 +372,20 @@ class Helper:
             target_note = link.target.note
             if link.target.note.last_build_date_html is not None:
                 references.add(target_note) 
-      
+
         #inject external documents 
         if format == 'html':
             for reference in references:
                 if reference.last_build_date_html is not None:
                     external_documents += f"\\externaldocument[{reference.reference}-]{{{reference.filename}}}\n"
-       
+
         referenced_by_section = "\\section*{Referenced In}\n\\begin{itemize}\n"
         for reference in linked_files:
             referenced_by_section += f"\\item \\excref{{{reference}}}"
 
         referenced_by_section += "\\end{itemize}"
 
-        
+
 
         os.chdir(format)
 
@@ -354,8 +409,8 @@ class Helper:
         elif format == 'html':
             options = ['-j', filename] + options + ['"svg-"']
             #options = ['-j', filename] + options
-            
- 
+
+
 
         document = contents.split('\\end{document}')[0]
 
@@ -381,10 +436,10 @@ class Helper:
         elif format == 'pdf':
             note.last_build_date_pdf = datetime.datetime.now()
         note.save()
-        
+
         return process
 
-        
+
 
     def render_all(format='pdf'):
         """
@@ -392,7 +447,7 @@ class Helper:
         """
         pass
 
-        
+
     def biber(filename, folder='pdf'):
         """
 
@@ -406,16 +461,16 @@ class Helper:
         os.chdir('../')
 
         return output, error
-        
+
 
     def render_all_html():
         """
             Renderes all the notes using make4ht. Saves output in /html
         """
         import subprocess
-        
+
         notes = Helper.__getnotefiles()
-        
+
 
         print('render pass 1')
         for note in notes:
@@ -426,7 +481,7 @@ class Helper:
             print('running biber...', end='')
             output, error = Helper.biber(filename, 'html')
             print('done')
-        
+
         print('render pass 2')
         for note in notes:
             filename = os.path.split(note)[-1][:-4]
@@ -436,16 +491,16 @@ class Helper:
                 print('done')
             else:
                 print('\n',process.stderr)
-       
-       
+
+
     def render_all_pdf():
         """
             Renderes all the notes using pdflatex. Saves output in /pdf
         """
         import subprocess
-        
+
         notes = Helper.__getnotefiles()
-        
+
 
         print('render pass 1')
         for note in notes:
@@ -460,7 +515,7 @@ class Helper:
             else:
                 print('error!')
                 print(error)
-        
+
         print('render pass 2')
         for note in notes:
             filename = os.path.split(note)[-1][:-4]
@@ -476,7 +531,7 @@ class Helper:
         updated, new_links, run_biber = Helper.synchronize()
 
 
-        
+
         for note in database.Note:
             if note in updated:
                 continue
@@ -493,7 +548,7 @@ class Helper:
                     #fix referenced in
                     new_links.extend([r for r in note.references])
 
-        
+
         #render the updated files
         for note in updated:
             print(f'Rendering {note.filename}')
@@ -508,7 +563,7 @@ class Helper:
             print(f'Rendering {link.target.note.filename}')
             Helper.render(link.target.note.filename, format)
             rerendered.append(link.target.note)
-                
+
 
 
 
@@ -574,14 +629,14 @@ class Helper:
                         if Helper.__getyesno():
                             Helper.__createnotefile(filename)
                             tracked_notes[filename] = reference_name
-                            
+
                     else:
                         tracked_notes[filename] = reference_name
 
         for filename, reference_name in tracked_notes.items():
             filepath = os.path.join('notes', 'slipbox', f'{filename}.tex')
             modified = datetime.datetime.fromtimestamp(os.path.getmtime(filepath))
-            
+
 
             try:
                 note = database.Note.get(filename=filename)
@@ -595,13 +650,13 @@ class Helper:
                 except FileNotFoundError as e:
                     #print(f'{filename} is yet to be rendered as html')
                     pass
-                
+
                 try:
                     pdf_render = datetime.datetime.fromtimestamp(os.path.getmtime(f'pdf/{filename}.pdf'))
                     note.last_build_date_pdf = pdf_render
                 except FileNotFoundError as e:
                     print(f'{filename} is yet to be rendered as pdf')
-                
+
 
 
                 if note.reference == reference_name:
@@ -610,7 +665,7 @@ class Helper:
                     #update note reference to the one in documents.tex, might want to check that this is the right thing to do
                     note.reference = reference_name
                 note.save()
-            
+
             except database.Note.DoesNotExist:
                 try:
                     note = database.Note.get(reference=reference_name)
@@ -639,21 +694,21 @@ class Helper:
                         Helper.addtodocuments(note, reference)
                     except pw.IntegrityError:
                         print('Error adding note, note already exists in database') 
-        
+
         #add labels
         for note in database.Note:
             Helper.__update_labels(note)
             Helper.__update_citations(note)
-                   
+
         #add connections
 
         for note in database.Note: 
             Helper.__update_links(note)
 
 
-            
 
-                        
+
+
     def list_unreferenced():
         from LatexZettel import analysis
         """
@@ -663,7 +718,7 @@ class Helper:
         notes, adj_matrix = analysis.calculate_adjacency_matrix()
 
         referenced_by = np.sum(adj_matrix, axis=0)
-        
+
         number = 1
         for note, links_from in zip(notes, referenced_by):
             if links_from == 0:
@@ -716,7 +771,7 @@ class Helper:
                     else:
                         label = link.group(4) 
                     file_references.append((link.group(5), label)) 
-                                 
+
         md_links = {} 
         for ref, tex_label in file_references:
             try:
@@ -764,7 +819,7 @@ class Helper:
 
         output = bytearray()
         input_file = os.path.join('projects', project_folder, texfile)
-        
+
         with open(input_file, 'r') as f:
             for line in f:
 
@@ -800,7 +855,7 @@ class Helper:
             output_file = f'draft/{filename}'
 
         output = bytearray()
-    
+
         with open(input_file, 'r') as f:
             for line in f:
                 output.extend((re.sub('\\\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', '', line).strip() + '\n').encode())
@@ -841,8 +896,8 @@ class Helper:
         tracked = [c for c in note.citations]
         tracked_keys = [c.citationkey for c in tracked]
 
-                
-        
+
+
         updates_to_citations = False
 
         for key in keys:
@@ -850,7 +905,7 @@ class Helper:
                 continue
             database.Citation.create(note=note, citationkey=key)
             updates_to_citations = True
-            
+
 
         for citation in tracked:
             if citation.citationkey not in keys:
@@ -858,7 +913,7 @@ class Helper:
                 updates_to_citations = True
 
         return updates_to_citations
-                
+
 
 
     def __update_labels(note):
@@ -872,7 +927,7 @@ class Helper:
         for label in note.labels:
             if label.label not in labels:
                 label.delete_instance()
-                   
+
         #add connections
 
     def __update_links(note):
@@ -889,7 +944,7 @@ class Helper:
                     link = database.Link.create(target=label, source=note)
                     modified.append(link)
                 except database.Label.DoesNotExist:
-                        print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
+                    print(f'label in {note.filename} with details {link[0]}, {link[1]} does not exist')
 
         #remove any that no longer exist
         for link in note.references:
@@ -932,7 +987,7 @@ class Helper:
         except FileNotFoundError:
             pass
 
-         
+
         file = bytearray()
         title = ' '.join([s.capitalize() for s in filename.split('_')])
 
@@ -1012,15 +1067,15 @@ class Helper:
 
         print(tags)
 
-    
-    
+
+
     def __get_recent_files(n = -1):
         files = Helper.__getnotefiles()
 
 
         if int(n) <= 0:
             n = len(files)
-       
+
         file_dict = {}
         for file in files:
             time = os.path.getmtime(file)
@@ -1031,7 +1086,7 @@ class Helper:
 
         ordered = sorted(file_dict, reverse=True)
 
-        
+
         r = []
 
         for i, t in zip(range(n), ordered):
@@ -1039,7 +1094,7 @@ class Helper:
 
         return r
 
-                
+
     def __getyesno():
         while True:
             a = input()
@@ -1049,11 +1104,11 @@ class Helper:
                 return False
             else:
                 print('Please enter either \'y\' or \'n\'')
-         
+
 
 def main(args):
     """
-        
+
         Execute the helper functions from the command line.
 
     """
