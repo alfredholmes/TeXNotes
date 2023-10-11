@@ -1,19 +1,29 @@
 local List = require 'pandoc.List'
-local theorem_environments
+local environments
+local tex_env_code
 
 function to_str(el)
+    print(el)
     return el[1].text
 end
 
 local title_header 
 function Meta(meta)
-    if meta["theorem-environments"] then
-        theorem_environments = meta["theorem-environments"]:map(to_str)
+    for key, value in pairs(meta) do
+        print(key, value)
+    end
+    if meta["environments"] then
+        environments = {}
+        tex_env_code = {}
+        for key, value in pairs(meta['environments']) do 
+            table.insert(environments, key)
+            tex_env_code[key] = value[1].text
+        end
+        environments = List(environments)
     end
     if title_header ~= nil and title_header ~= "" then
         meta.title = title_header
     end
-    theorem_environments = {'theorem'}
     return meta
 end
 
@@ -52,10 +62,11 @@ function transform(block)
 
 
 
-        for i, env in ipairs(theorem_environments) do 
+        for i, env in ipairs(environments) do 
             local env = env:sub(1, 1):upper() .. env:sub(2):lower()
             ev, label = str:match("^(" .. env .. ")%s?%(?(.-)%)?$")
-            if ev ~= "" then
+            print('ev:', ev)
+            if ev ~= nil then
                 environment = env
                 break
             end
@@ -64,6 +75,7 @@ function transform(block)
     
 
     if not in_theorem then
+        print(block, environment)
         if block.tag == "Header" and block.level == 3 and environment ~= nil then
             in_theorem = true
             environment = block.content[1].text:lower()
@@ -78,11 +90,11 @@ function transform(block)
         end
     else
         if label ~= nil and label ~= "" then
-            block_start = pandoc.RawInline('latex', "\\begin{" .. environment .. "}[" .. label .. "] \\label{" .. header_label .. "}\n")
+            block_start = pandoc.RawInline('latex', "\\begin{" .. tex_env_code[environment] .. "}[" .. label .. "] \\label{" .. header_label .. "}\n")
         else
-            block_start = pandoc.RawInline('latex', "\\begin{" .. environment .. "} \\label{" .. header_label .. "}\n")
+            block_start = pandoc.RawInline('latex', "\\begin{" .. tex_env_code[environment] .. "} \\label{" .. header_label .. "}\n")
         end
-        local block_end = pandoc.RawInline('latex', "\n\\end{" .. environment .. "}")
+        local block_end = pandoc.RawInline('latex', "\n\\end{" .. tex_env_code[environment] .. "}")
 
         environment = nil
         label = nil

@@ -329,11 +329,13 @@ class Helper:
                 import subprocess 
                 command = 'pandoc' 
                 options = ['-o', os.path.join('notes', 'slipbox', f'{filename}.tex')]
-                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex']
+                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata=defaults.yaml']
                 process = subprocess.run([command, *options], input=text.encode(), capture_output=True)
 
                 if process.returncode != 0:
                     print('pandoc error:', process.stderr)
+
+                print(process.stdout)
 
     def render(filename, format='pdf', biber=False):
         """
@@ -390,7 +392,7 @@ class Helper:
         os.chdir(format)
 
 
-        path_to_file = f'../notes/slipbox/{filename}.tex'
+        path_to_file = os.path.join('..', 'notes', 'slipbox', f'{filename}.tex') 
 
 
         try:
@@ -424,7 +426,7 @@ class Helper:
         document += "\\end{document}"
 
         process = subprocess.run([command, *options], input=document.encode(), capture_output=True)
-        os.chdir('../')
+        os.chdir('..')
 
         if process.returncode != 0:
             print('Failed to compile', process.stderr) #TODO: Exceptions
@@ -565,6 +567,14 @@ class Helper:
             rerendered.append(link.target.note)
 
 
+        #rerender the originals if some other rendering has occured
+        rerendered = []
+        for link in new_links:
+            if link.source in rerendered:
+                continue
+            print(f'rendering {link.source.filename}')
+            Helper.render(link.source.filename, format)
+            rerendered.append(link.source)
 
 
     def synchronize():
@@ -588,7 +598,7 @@ class Helper:
 
             except FileNotFoundError:
                 #Todo: file has been deleted or renamed without the database being updated really need to run force_synchronize.
-                print('file not found for note with reference {note.reference}')
+                print(f'file not found for note with reference {note.reference}')
                 pass
 
         #update labels 
