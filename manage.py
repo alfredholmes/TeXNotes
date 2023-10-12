@@ -286,6 +286,7 @@ class Helper:
 
     def sync_md():
         markdown_files = files.get_files(os.path.join('notes', 'md'), 'md')
+        sb_file_names = {os.path.basename(f)[:-3]: "_".join([s for s in os.path.basename(f).split(" ")])[:-3] for f in markdown_files}
         print('Warning: this may overwrite any files in notes/slipbox that share their filename with a file in notes/md. Do you wish to continue?')
         if not Helper.__getyesno():
             return
@@ -293,43 +294,52 @@ class Helper:
         print(tracked_note_files)
         for file in markdown_files:
             filename = os.path.basename(file)[:-3]
-            if filename not in tracked_note_files:
-                reference_name = filename.split('-')
-                reference_name = ''.join([w.capitalize() for w in filename.split('_')])
-                note = database.Note(filename=filename, reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
+            if sb_file_names[filename] not in tracked_note_files:
+                reference_name = ''.join([w.capitalize() for w in sb_file_names[filename].split('_')])
+                note = database.Note(filename=sb_file_names[filename], reference=reference_name, created = datetime.datetime.now(), last_edit_date = datetime.datetime.now())
                 note.save()
-                Helper.addtodocuments(filename, reference_name)
+                Helper.addtodocuments(sb_file_names[filename], reference_name)
         
         for file in markdown_files:
             filename = os.path.basename(file)[:-3]
+            sb_file = sb_file_names[filename]
+            print(sb_file)
             try: 
-                edit_delta = os.path.getmtime(file) - os.path.getmtime(os.path.join('notes', 'slipbox', f'{filename}.tex'))
+                edit_delta = os.path.getmtime(file) - os.path.getmtime(os.path.join('notes', 'slipbox', f'{sb_file}.tex'))
             except FileNotFoundError:
                 edit_delta = 1
 
             #if edit_delta > 0:
             if edit_delta > 0: 
                 #change all the links in the document
+                def md_name_to_reference(match):
+                    filename = m.group(1)
+                    sb_name = '_'.join(filename.split(' '))
+                    return database.Note.get(sb_name).reference
+
+
                 with open(file, 'r') as f:
                     file_contents = f.read()
-                regex = "\[\[([A-Za-z0-9\-\_]+)\]\]"
-                text = re.sub(regex, lambda m: f"\\excref{{{database.Note.get(filename=m.group(1)).reference}}}", file_contents)
+                regex = "\[\[([^{\#\]\|}]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\excref{{{md_name_to_reference(m)}}}", file_contents)
 
-                regex = "\[\[([A-Za-z0-9\-\_]+)\#\^?([A-Za-z0-9\-\_]+)\]\]"
+                regex = "\[\[([^{\#\]\|}]+)\#\^?([A-Za-z0-9\-\_]+)\]\]"
 
-                text = re.sub(regex, lambda m: f"\\excref[{m.group(2)}]{{{database.Note.get(filename=m.group(1)).reference}}}", text)
+                text = re.sub(regex, lambda m: f"\\excref[{m.group(2)}]{{{md_name_to_reference(m)}}}", text)
 
 
-                regex = "\[\[([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
-                text = re.sub(regex, lambda m: f"\\exhyperref{{{database.Note.get(filename=m.group(1)).reference}}}{{{m.group(2)}}}", text)
+                regex = "\[\[([^{\#\]\|}]+)\|([^]]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\exhyperref{{{md_name_to_reference(m)}}}{{{m.group(2)}}}", text)
 
-                regex = "\[\[([A-Za-z0-9\-\_]+)\#\^?([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
-                text = re.sub(regex, lambda m: f"\\exhyperref[{m.group(2)}]{{{database.Note.get(filename=m.group(1)).reference}}}{{{m.group(3)}}}", text)
+                regex = "\[\[([^{\#\]\|}]+)\#\^?([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
+                text = re.sub(regex, lambda m: f"\\exhyperref[{m.group(2)}]{{{md_name_to_reference(m)}}}{{{m.group(3)}}}", text)
+
+                print(text)
 
                 import subprocess 
                 command = 'pandoc' 
-                options = ['-o', os.path.join('notes', 'slipbox', f'{filename}.tex')]
-                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata-file=defaults.yaml']
+                options = ['-o', os.path.join('notes', 'slipbox', f'{sb_file}.tex')]
+                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata-file=pandoc/defaults.yaml', "-M", f"title={filename}"]
                 process = subprocess.run([command, *options], input=text.encode(), capture_output=True)
 
                 if process.returncode != 0:

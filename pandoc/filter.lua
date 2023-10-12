@@ -3,15 +3,11 @@ local environments
 local tex_env_code
 
 function to_str(el)
-    print(el)
     return el[1].text
 end
 
 local title_header 
 function Meta(meta)
-    for key, value in pairs(meta) do
-        print(key, value)
-    end
     if meta["environments"] then
         environments = {}
         tex_env_code = {}
@@ -65,7 +61,6 @@ function transform(block)
         for i, env in ipairs(environments) do 
             local env = env:sub(1, 1):upper() .. env:sub(2):lower()
             ev, label = str:match("^(" .. env .. ")%s?%(?(.-)%)?$")
-            print('ev:', ev)
             if ev ~= nil then
                 environment = env
                 break
@@ -75,7 +70,6 @@ function transform(block)
     
 
     if not in_theorem then
-        print(block, environment)
         if block.tag == "Header" and block.level == 3 and environment ~= nil then
             in_theorem = true
             environment = block.content[1].text:lower()
@@ -116,7 +110,9 @@ end
 
 function Pandoc(doc)
     doc.blocks = doc.blocks:walk({Block = transform})
-    doc.meta.title = title_header 
+    if title_header ~= "" and title_header ~= nil then
+        doc.meta.title = title_header 
+    end
     return doc
 end
 
@@ -132,14 +128,21 @@ function Para(para)
     --- handle equation labels
 
     local labels = {}
+    local to_delete = {}
     local previous_was_tex = false
+    local distance_to_tex = - 1
     for i, v in ipairs(para.content) do
         if previous_was_tex and v.tag == "Str" and string.sub(v.text, 1, 1) == "^" then
-            labels[i - 1] = string.sub(v.text, 2, -1)
+            labels[i + distance_to_tex] = string.sub(v.text, 2, -1)
+            to_delete[i] = true
         end
+
         
         if v.tag == 'RawInline' and v.format == 'latex' then
             previous_was_tex = true
+            distance_to_tex = - 1
+        elseif v.tag == "SoftBreak" then
+            distance_to_tex = distance_to_tex - 1
         else
             previous_was_tex = false
         end
@@ -150,7 +153,7 @@ function Para(para)
     end
     local new_content = {}
     for i, v in ipairs(para.content) do 
-        if labels[i - 1] == nil then
+        if to_delete[i] == nil then
             table.insert(new_content, v)
         end
     end
