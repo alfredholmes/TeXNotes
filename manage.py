@@ -285,6 +285,12 @@ class Helper:
 
 
     def sync_md():
+        try:
+            os.mkdir(os.path.join('notes', 'slipbox'))
+        except FileExistsError:
+            pass
+        
+
         markdown_files = files.get_files(os.path.join('notes', 'md'), 'md')
         sb_file_names = {os.path.basename(f)[:-3]: "_".join([s for s in os.path.basename(f).split(" ")])[:-3] for f in markdown_files}
         print('Warning: this may overwrite any files in notes/slipbox that share their filename with a file in notes/md. Do you wish to continue?')
@@ -312,10 +318,10 @@ class Helper:
             #if edit_delta > 0:
             if edit_delta > 0: 
                 #change all the links in the document
-                def md_name_to_reference(match):
+                def md_name_to_reference(m):
                     filename = m.group(1)
                     sb_name = '_'.join(filename.split(' '))
-                    return database.Note.get(sb_name).reference
+                    return database.Note.get(filename=sb_name).reference
 
 
                 with open(file, 'r') as f:
