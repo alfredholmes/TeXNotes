@@ -285,6 +285,8 @@ class Helper:
 
 
     def sync_md():
+        #check that the database is setup correctly, and that the slipbox folder exists
+        database.create_all_tables()
         try:
             os.mkdir(os.path.join('notes', 'slipbox'))
         except FileExistsError:
