@@ -174,4 +174,5 @@ return {
     {Para = Para},
     {Meta = Meta},
     {Pandoc = Pandoc},
+    {Emph = Emph},
 }
