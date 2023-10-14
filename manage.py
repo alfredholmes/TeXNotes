@@ -331,7 +331,7 @@ class Helper:
                 regex = "\[\[([^{\#\]\|}]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\excref{{{md_name_to_reference(m)}}}", file_contents)
 
-                regex = "\[\[([^{\#\]\|}]+)\#\^?([A-Za-z0-9\-\_]+)\]\]"
+                regex = "\[\[([^{\#\]\|}]+)\#\^?([^]]+)\]\]"
 
                 text = re.sub(regex, lambda m: f"\\excref[{m.group(2)}]{{{md_name_to_reference(m)}}}", text)
 
@@ -339,15 +339,14 @@ class Helper:
                 regex = "\[\[([^{\#\]\|}]+)\|([^]]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\exhyperref{{{md_name_to_reference(m)}}}{{{m.group(2)}}}", text)
 
-                regex = "\[\[([^{\#\]\|}]+)\#\^?([A-Za-z0-9\-\_]+)\|([^]]+)\]\]"
+                regex = "\[\[([^{\#\]\|}]+)\#\^?([^]]+)\|([^]]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\exhyperref[{m.group(2)}]{{{md_name_to_reference(m)}}}{{{m.group(3)}}}", text)
 
-                print(text)
 
                 import subprocess 
                 command = 'pandoc' 
                 options = ['-o', os.path.join('notes', 'slipbox', f'{sb_file}.tex')]
-                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata-file=pandoc/defaults.yaml', "-M", f"title={filename}"]
+                options += ['-s', '-t', 'latex', '--lua-filter=pandoc/filter.lua', '--template=pandoc/template.tex', '--metadata-file=pandoc/defaults.yaml', "--biblatex",  "-M", f"title={filename}"]
                 process = subprocess.run([command, *options], input=text.encode(), capture_output=True)
 
                 if process.returncode != 0:
