@@ -299,7 +299,6 @@ class Helper:
         if not Helper.__getyesno():
             return
         tracked_note_files = [note.filename for note in database.Note]
-        print(tracked_note_files)
         for file in markdown_files:
             filename = os.path.basename(file)[:-3]
             if sb_file_names[filename] not in tracked_note_files:
