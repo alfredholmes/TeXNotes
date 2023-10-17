@@ -76,9 +76,9 @@ function transform(block)
             counter = counter + 1
             
             if block.identifier == environment then
-                header_label = "" .. environment .. ":" .. tostring(counter)
+                header_label = tostring(counter)
             else
-                header_label = "" .. environment .. ":" .. block.identifier
+                header_label  = block.identifier
             end
             return {}       
         end
