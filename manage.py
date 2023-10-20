@@ -396,6 +396,7 @@ class Helper:
             for reference in references:
                 if reference.last_build_date_html is not None:
                     external_documents += f"\\externaldocument[{reference.reference}-]{{{reference.filename}}}\n"
+        
 
         referenced_by_section = "\\section*{Referenced In}\n\\begin{itemize}\n"
         for reference in linked_files:
@@ -438,6 +439,7 @@ class Helper:
         if format == 'html':
             #replace include with preamble_html and inject external documents
             document = document.replace("\\subimport{../template}{preamble.tex}", "\\subimport{../template}{preamble_html.tex}\n" + external_documents)
+            document = document.replace("\\documentclass{../template/texnote}", "\\documentclass{../template/texnote}\n" + external_documents)
 
         document += "\\end{document}"
 
@@ -445,7 +447,7 @@ class Helper:
         os.chdir('..')
 
         if process.returncode != 0:
-            print('Failed to compile', process.stderr) #TODO: Exceptions
+            print('Failed to compile', process.stdout.decode()) #TODO: Exceptions
             return process
 
 

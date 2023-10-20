@@ -16,8 +16,12 @@
 
 
 %setup external file links
+
 \RequirePackage{import}
-\subimport{../notes}{documents.tex}
+\ifx\HCode\UnDeFiNeD
+    \subimport{../notes}{documents.tex}
+\fi
+
 \RequirePackage{slashed}
 
 %setup geometry
