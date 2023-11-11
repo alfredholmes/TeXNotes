@@ -74,6 +74,6 @@ See [/docs/manage.html](https://htmlpreview.github.io/?https://github.com/alfred
 
 ### Donations / Support
 
-Please report any bugs or feature requests to the repository [issues](https://github.com/alfredholmes/LaTeX-Zettel/issues). If you find the project useful, please consider buying me a [coffee](https://ko-fi.com/holmes).
+Please report any bugs or feature requests to the repository [issues](https://github.com/alfredholmes/LaTeX-Zettel/issues). If you find the project useful, please consider buying me a [coffee](https://ko-fi.com/mildobsessions).
 
 
