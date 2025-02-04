@@ -42,13 +42,13 @@ class Helper:
 
     def addtodocuments(filename, reference=""):
         """
-            Adds line \externaldocument[reference-]{filename} to documents.tex
+            Adds line \\externaldocument[reference-]{filename} to documents.tex
             If reference is not supplied then it defaults to, for example, NoteName if filename=note_name
         """
 
 
         with open('notes/documents.tex', 'a') as f:
-            f.write(f'\externaldocument[{reference}-]{{{filename}}}\n')
+            f.write(f'\\externaldocument[{reference}-]{{{filename}}}\n')
 
 
 
@@ -183,7 +183,7 @@ class Helper:
 
         with open('notes/documents.tex', 'r') as f:
             for line in f:
-                lines.extend(re.sub('\\\\externaldocument\[' + note.reference + '\-\]\{' + old_filename + '\}', '\\\\externaldocument[' + note.reference + '-]{' + new_filename + '}', line).encode())
+                lines.extend(re.sub(r'\\externaldocument\[' + note.reference + r'\-\]\{' + old_filename + r'\}', r'\\externaldocument[' + note.reference + r'-]{' + new_filename + r'}', line).encode())
 
 
         with open('notes/documents.tex', 'wb') as f:
@@ -199,11 +199,11 @@ class Helper:
         Helper.synchronize()
         def replace_text(m):
             if m.group(1) is None and m.group(3) is None:
-                return f'\\excref{new_reference}'
+                return f'\\excref{{{new_reference}}}'
             elif m.group(1) is None and m.group(3) is not None:
                 return f'\\excref[{m.group(4)}]{{{new_reference}}}'
             elif m.group(1) is not None and m.group(3) is None:
-                return f'\\exhyperref{new_reference}'
+                return f'\\exhyperref{{{new_reference}}}'
             elif m.group(1) is not None:
                 return f'\\exhyperref[{m.group(4)}]{{{new_reference}}}'
 
@@ -216,7 +216,7 @@ class Helper:
 
         with open('notes/documents.tex', 'r') as f:
             for line in f:
-                lines.extend(re.sub('\\\\externaldocument\[' + note.reference + '\-\]\{' + note.filename + '\}', '\\\\externaldocument[' + new_reference + '-]{' + note.filename + '}', line).encode())
+                lines.extend(re.sub(r'\\externaldocument\[' + note.reference + r'\-\]\{' + note.filename + r'\}', r'\\externaldocument[' + new_reference + r'-]{' + note.filename + r'}', line).encode())
 
         with open('notes/documents.tex', 'wb') as f:
             f.write(lines)
@@ -230,7 +230,7 @@ class Helper:
                 lines = bytearray()
                 with open(f'notes/slipbox/{backref.source.filename}.tex', 'r') as f:
                     for line in f:
-                        lines.extend(re.sub('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{' + old_reference + '\}', lambda m: replace_text(m), line).encode())
+                        lines.extend(re.sub(r'\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{' + old_reference + r'\}', lambda m: replace_text(m), line).encode())
 
                 with open(f'notes/slipbox/{backref.source.filename}.tex', 'wb') as f:
                     f.write(lines)
@@ -262,7 +262,7 @@ class Helper:
 
         to_delete= []
         for i, line in enumerate(lines):
-            m = re.search(f'(\\\\externaldocument\[)(.+?)(\-\]\{{){filename}(\}})', line)
+            m = re.search(f'(\\externaldocument\\[)(.+?)(\\-\\]\\{{){filename}(\\}})', line)
             if m:
                 to_delete.append(i)
 
@@ -327,18 +327,18 @@ class Helper:
 
                 with open(file, 'r') as f:
                     file_contents = f.read()
-                regex = "\[\[([^{\#\]\|}]+)\]\]"
+                regex = r"\[\[([^{\#\]\|}]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\excref{{{md_name_to_reference(m)}}}", file_contents)
 
-                regex = "\[\[([^{\#\]\|}]+)\#\^?([^]]+)\]\]"
+                regex = r"\[\[([^{\#\]\|}]+)\#\^?([^]]+)\]\]"
 
                 text = re.sub(regex, lambda m: f"\\excref[{m.group(2)}]{{{md_name_to_reference(m)}}}", text)
 
 
-                regex = "\[\[([^{\#\]\|}]+)\|([^]]+)\]\]"
+                regex = r"\[\[([^{\#\]\|}]+)\|([^]]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\exhyperref{{{md_name_to_reference(m)}}}{{{m.group(2)}}}", text)
 
-                regex = "\[\[([^{\#\]\|}]+)\#\^?([^]]+)\|([^]]+)\]\]"
+                regex = r"\[\[([^{\#\]\|}]+)\#\^?([^]]+)\|([^]]+)\]\]"
                 text = re.sub(regex, lambda m: f"\\exhyperref[{m.group(2)}]{{{md_name_to_reference(m)}}}{{{m.group(3)}}}", text)
 
 
@@ -646,7 +646,7 @@ class Helper:
         tracked_notes = {}
         with open('notes/documents.tex', 'r') as f:
             for line in f:
-                m = re.search('(\\\\externaldocument\[)(.+?)(\-\]\{)(.+?)(\})', line)
+                m = re.search(r'(\\externaldocument\[)(.+?)(\-\]\{)(.+?)(\})', line)
                 if m:
                     reference_name = m.group(2)
                     filename = m.group(4)
@@ -792,7 +792,7 @@ class Helper:
         with open(f'notes/slipbox/{note_name}.tex', 'r') as f:
             for line in f:
                 file.append(line)
-                links = re.finditer('\\\\ex?(hyper)?(c)?ref(\[([^]+)\])?\{(.*?)\}', line)
+                links = re.finditer(r'\\ex?(hyper)?(c)?ref(\[([^]+)\])?\{(.*?)\}', line)
                 for link in links:
                     if link.group(4) is None:
                         label = 'note'
@@ -813,7 +813,7 @@ class Helper:
                 md_links[(ref, tex_label)] = f'{note.filename}#{tex_label}'
         new_file = bytearray()
         for line in file:
-            new_file.extend((re.sub('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}(\{(.*?)\})?', lambda m : replace_string(m, md_links), line)).encode())
+            new_file.extend((re.sub(r'\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}(\{(.*?)\})?', lambda m : replace_string(m, md_links), line)).encode())
 
         import subprocess
 
@@ -851,8 +851,8 @@ class Helper:
         with open(input_file, 'r') as f:
             for line in f:
 
-                output.extend((re.sub('\\\\transclude(\[[^]]+\]+)?\{([^}]+)\}', '', line).strip() + '\n').encode())
-                external_documents = re.finditer('\\\\transclude(\[([^]]+)\])?\{([^}]+)\}', line)
+                output.extend((re.sub(r'\\transclude(\[[^]]+\]+)?\{([^}]+)\}', '', line).strip() + '\n').encode())
+                external_documents = re.finditer(r'\\transclude(\[([^]]+)\])?\{([^}]+)\}', line)
                 for document in external_documents:
                     tag = document.group(2)
                     document = document.group(3)
@@ -862,7 +862,7 @@ class Helper:
                     note_file = os.path.join('notes', 'slipbox', f'{document}.tex')
                     with open(note_file, 'r') as in_file:
                         full_document = in_file.read() 
-                        import_text = re.search(f'%<\*{tag}>((.|\n)*?)%</{tag}>', full_document)
+                        import_text = re.search(f'%<\\*{tag}>((.|\n)*?)%</{tag}>', full_document)
                         output.extend(import_text.group(1).strip().encode())
 
         out_file = os.path.join(output_dir, texfile)
@@ -872,7 +872,7 @@ class Helper:
 
     def export_draft(input_file, output_file=None):
         """
-            Exports the export input_file (a file like /export/example.tex containing \ExecuteMetaData calls) and creates a .tex file (by default in /draft/filename.tex) where the \ExecuteMetadata commands are replaced with the body of the notes that they reference.
+            Exports the export input_file (a file like /export/example.tex containing \\ExecuteMetaData calls) and creates a .tex file (by default in /draft/filename.tex) where the \\ExecuteMetadata commands are replaced with the body of the notes that they reference.
         """
         if output_file is None:
             try:
@@ -886,14 +886,14 @@ class Helper:
 
         with open(input_file, 'r') as f:
             for line in f:
-                output.extend((re.sub('\\\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', '', line).strip() + '\n').encode())
-                external_documents = re.finditer('\\\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', line)
+                output.extend((re.sub(r'\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', '', line).strip() + '\n').encode())
+                external_documents = re.finditer(r'\\ExecuteMetaData\[\.\./([^]]+)\]\{([^}]+)\}', line)
                 for document in external_documents:
                     import_file = document.group(1) 
                     tag = document.group(2)
                     with open(import_file, 'r') as in_file:
                         import_text_file = in_file.read()
-                        import_text = re.search(f'%<\*{tag}>((.|\n)*?)%</{tag}>', import_text_file)
+                        import_text = re.search(f'%<\\*{tag}>((.|\n)*?)%</{tag}>', import_text_file)
                         output.extend(import_text.group(1).strip().encode())
 
 
@@ -1022,7 +1022,7 @@ class Helper:
         with open(os.path.join('template', f'note.{extension}'), 'r') as f:
             for i, line in enumerate(f):
                 if extension == 'tex':
-                    file.extend((re.sub('\\\\title\{(.*?)\}', '\\\\title{' + title + '}', line)).encode())
+                    file.extend((re.sub(r'\\title\{(.*?)\}', r'\\title{' + title + '}', line)).encode())
                 elif extension == 'md':
                     file.extend((re.sub('Note Title', title, line)).encode())
 
@@ -1037,7 +1037,7 @@ class Helper:
         file_labels = []
         with open(f'notes/slipbox/{note.filename}.tex') as f:
             for line in f:
-                labels = re.search('(\\\\(label|currentdoc)\{)(.*?)(\})', line)
+                labels = re.search(r'(\\(label|currentdoc)\{)(.*?)(\})', line)
                 try:
                     label = labels.group(3)
                     file_labels.append(label)
@@ -1058,7 +1058,7 @@ class Helper:
         keys = set()
         with open(file_path, 'r') as f:
             for line in f:
-                citations = re.finditer('\\\\(' + '|'.join(citation_commands) + ')(\[([^]]+)\])?(\{[^\}]+\})?(\[([^]]+)\])?\{([^\}]+)\}', line)
+                citations = re.finditer(r'\\(' + '|'.join(citation_commands) + r')(\[([^]]+)\])?(\{[^\}]+\})?(\[([^]]+)\])?\{([^\}]+)\}', line)
                 for match in citations:
                     key = match.group(7)
                     keys.add(key)
@@ -1071,7 +1071,7 @@ class Helper:
         file_references = []
         with open(f'notes/slipbox/{note.filename}.tex', 'r') as f:
             for line in f:
-                links = re.finditer('\\\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
+                links = re.finditer(r'\\ex(hyper)?(c)?ref(\[([^]]+)\])?\{(.*?)\}', line)
                 for link in links:
                     if link.group(4) is None:
                         ref = 'note'
@@ -1087,7 +1087,7 @@ class Helper:
             with open(note) as f:
                 lines = f.read().splitlines()
                 last_line = lines[-1]
-                if re.search("\\\\end\{document\}", last_line) is None:
+                if re.search(r"\\end\{document\}", last_line) is None:
                     note_tags = [f.lower() for f in last_line.strip().split(",")]
                     for tag in note_tags:
                         tags[tag] = ('notes/'.join(note.split('notes/')[1:]))[:-4]
